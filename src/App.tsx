@@ -3,7 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { InvoiceProvider } from "@/contexts/InvoiceContext";
+import Dashboard from "./pages/Dashboard";
+import InvoiceList from "./pages/InvoiceList";
+import CreateInvoice from "./pages/CreateInvoice";
+import InvoiceDetail from "./pages/InvoiceDetail";
+import ClientList from "./pages/ClientList";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -11,15 +17,21 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <InvoiceProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/factures" element={<InvoiceList />} />
+            <Route path="/factures/nouvelle" element={<CreateInvoice />} />
+            <Route path="/factures/:id" element={<InvoiceDetail />} />
+            <Route path="/clients" element={<ClientList />} />
+            <Route path="/parametres" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </InvoiceProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
