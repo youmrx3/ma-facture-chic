@@ -1,0 +1,269 @@
+import { useState, useRef } from 'react';
+import { useInvoice } from '@/contexts/InvoiceContext';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Building2, Save, Upload, X } from 'lucide-react';
+import { CompanySettings } from '@/types/invoice';
+import { toast } from 'sonner';
+
+export default function Settings() {
+  const { companySettings, updateCompanySettings } = useInvoice();
+  const [formData, setFormData] = useState<CompanySettings>(companySettings);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, logo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, logo: undefined });
+  };
+
+  const handleSubmit = () => {
+    if (!formData.nom || !formData.email) {
+      toast.error('Le nom et l\'email sont obligatoires');
+      return;
+    }
+    updateCompanySettings(formData);
+    toast.success('Paramètres sauvegardés');
+  };
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Paramètres</h1>
+          <p className="text-muted-foreground mt-1">
+            Configurez les informations de votre entreprise
+          </p>
+        </div>
+
+        <Tabs defaultValue="entreprise" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="entreprise">Entreprise</TabsTrigger>
+            <TabsTrigger value="bancaire">Informations Bancaires</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="entreprise" className="space-y-6">
+            {/* Logo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Logo de l'Entreprise
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-6">
+                  {formData.logo ? (
+                    <div className="relative">
+                      <img
+                        src={formData.logo}
+                        alt="Logo"
+                        className="h-24 w-24 rounded-lg object-contain border"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30">
+                      <Building2 className="h-10 w-10 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {formData.logo ? 'Changer le logo' : 'Télécharger un logo'}
+                    </Button>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Format recommandé: PNG ou JPG, max 2MB
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations de l'Entreprise</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Nom / Raison Sociale *</Label>
+                    <Input
+                      value={formData.nom}
+                      onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                      placeholder="Votre Entreprise SARL"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="contact@votre-entreprise.dz"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Téléphone</Label>
+                    <Input
+                      value={formData.telephone}
+                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                      placeholder="+213 555 123 456"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Site Web</Label>
+                    <Input
+                      value={formData.siteWeb || ''}
+                      onChange={(e) => setFormData({ ...formData, siteWeb: e.target.value })}
+                      placeholder="www.votre-entreprise.dz"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Adresse</Label>
+                  <Textarea
+                    value={formData.adresse}
+                    onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                    placeholder="123 Rue des Oliviers, Centre ville"
+                    rows={2}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Ville</Label>
+                    <Input
+                      value={formData.ville}
+                      onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                      placeholder="Alger"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Code Postal</Label>
+                    <Input
+                      value={formData.codePostal}
+                      onChange={(e) => setFormData({ ...formData, codePostal: e.target.value })}
+                      placeholder="16000"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Legal Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations Légales</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>NIF</Label>
+                    <Input
+                      value={formData.nif}
+                      onChange={(e) => setFormData({ ...formData, nif: e.target.value })}
+                      placeholder="Numéro d'Identification Fiscale"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>NIS</Label>
+                    <Input
+                      value={formData.nis}
+                      onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
+                      placeholder="Numéro d'Identification Statistique"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>RC</Label>
+                    <Input
+                      value={formData.rc}
+                      onChange={(e) => setFormData({ ...formData, rc: e.target.value })}
+                      placeholder="Registre de Commerce"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Capital Social</Label>
+                  <Input
+                    value={formData.capitalSocial || ''}
+                    onChange={(e) => setFormData({ ...formData, capitalSocial: e.target.value })}
+                    placeholder="1 000 000 DA"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bancaire" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Coordonnées Bancaires</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Banque</Label>
+                  <Input
+                    value={formData.banque || ''}
+                    onChange={(e) => setFormData({ ...formData, banque: e.target.value })}
+                    placeholder="Nom de la banque"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>RIB</Label>
+                  <Input
+                    value={formData.rib || ''}
+                    onChange={(e) => setFormData({ ...formData, rib: e.target.value })}
+                    placeholder="Relevé d'Identité Bancaire"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <Button size="lg" onClick={handleSubmit}>
+            <Save className="h-4 w-4 mr-2" />
+            Sauvegarder les paramètres
+          </Button>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
