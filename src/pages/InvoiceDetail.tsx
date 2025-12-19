@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Download,
   Send,
-  Edit,
   Trash2,
   Building2,
   Calendar,
@@ -107,20 +106,52 @@ export default function InvoiceDetail() {
     doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, 38);
     doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
 
-    // Company Info
-    if (companySettings.nom) {
-      doc.setFontSize(12);
-      doc.setTextColor(0);
-      doc.text(companySettings.nom, 140, 25);
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      if (companySettings.adresse) doc.text(companySettings.adresse, 140, 32);
-      if (companySettings.ville) doc.text(`${companySettings.codePostal} ${companySettings.ville}`, 140, 38);
-      if (companySettings.telephone) doc.text(`Tél: ${companySettings.telephone}`, 140, 44);
-      if (companySettings.email) doc.text(companySettings.email, 140, 50);
-      if (companySettings.nif) doc.text(`NIF: ${companySettings.nif}`, 140, 58);
-      if (companySettings.rc) doc.text(`RC: ${companySettings.rc}`, 140, 64);
+    // Company Info - Owner name first, then company name
+    let companyY = 25;
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    
+    // Owner name appears first
+    if (companySettings.proprietaire) {
+      doc.text(companySettings.proprietaire, 140, companyY);
+      companyY += 7;
     }
+    
+    // Then company name
+    if (companySettings.nom) {
+      doc.setFontSize(10);
+      doc.text(companySettings.nom, 140, companyY);
+      companyY += 6;
+    }
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    if (companySettings.adresse) {
+      doc.text(companySettings.adresse, 140, companyY);
+      companyY += 5;
+    }
+    if (companySettings.ville) {
+      doc.text(`${companySettings.codePostal} ${companySettings.ville}`, 140, companyY);
+      companyY += 5;
+    }
+    if (companySettings.telephone) {
+      doc.text(`Tél: ${companySettings.telephone}`, 140, companyY);
+      companyY += 5;
+    }
+    if (companySettings.email) {
+      doc.text(companySettings.email, 140, companyY);
+      companyY += 7;
+    }
+    
+    // Custom fields that are marked to show in PDF
+    const visibleFields = companySettings.customFields
+      ?.filter((field) => field.showInPdf && field.value)
+      .sort((a, b) => a.order - b.order) || [];
+    
+    visibleFields.forEach((field) => {
+      doc.text(`${field.label}: ${field.value}`, 140, companyY);
+      companyY += 5;
+    });
 
     // Client Info
     doc.setFontSize(11);
@@ -210,12 +241,17 @@ export default function InvoiceDetail() {
 
   const handleSendEmail = () => {
     if (!client?.email) {
-      toast.error('Le client n\'a pas d\'adresse email');
+      toast.error("Le client n'a pas d'adresse email");
       return;
     }
     // In a real app, this would send via an API
-    toast.info('Fonctionnalité d\'envoi par email - nécessite une configuration backend');
+    toast.info("Fonctionnalité d'envoi par email - nécessite une configuration backend");
   };
+
+  // Get visible custom fields for preview
+  const visibleFields = companySettings.customFields
+    ?.filter((field) => field.showInPdf && field.value)
+    .sort((a, b) => a.order - b.order) || [];
 
   return (
     <MainLayout>
@@ -288,6 +324,9 @@ export default function InvoiceDetail() {
                 <div className="grid sm:grid-cols-2 gap-8 mb-8">
                   <div>
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">DE</h3>
+                    {companySettings.proprietaire && (
+                      <p className="font-bold text-lg">{companySettings.proprietaire}</p>
+                    )}
                     <p className="font-semibold">{companySettings.nom || 'Votre Entreprise'}</p>
                     {companySettings.adresse && <p className="text-sm text-muted-foreground">{companySettings.adresse}</p>}
                     {companySettings.ville && (
@@ -295,7 +334,11 @@ export default function InvoiceDetail() {
                         {companySettings.codePostal} {companySettings.ville}
                       </p>
                     )}
-                    {companySettings.nif && <p className="text-sm text-muted-foreground">NIF: {companySettings.nif}</p>}
+                    {visibleFields.map((field) => (
+                      <p key={field.id} className="text-sm text-muted-foreground">
+                        {field.label}: {field.value}
+                      </p>
+                    ))}
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">FACTURÉ À</h3>
