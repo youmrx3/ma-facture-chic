@@ -18,6 +18,7 @@ interface InvoiceContextType {
 
 const defaultCompanySettings: CompanySettings = {
   nom: '',
+  proprietaire: '',
   adresse: '',
   ville: '',
   codePostal: '',
@@ -26,6 +27,12 @@ const defaultCompanySettings: CompanySettings = {
   nif: '',
   nis: '',
   rc: '',
+  customFields: [
+    { id: 'nif', label: 'NIF', value: '', showInPdf: true, order: 1 },
+    { id: 'nis', label: 'NIS', value: '', showInPdf: true, order: 2 },
+    { id: 'rc', label: 'RC', value: '', showInPdf: true, order: 3 },
+    { id: 'ai', label: 'AI', value: '', showInPdf: true, order: 4 },
+  ],
 };
 
 const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
@@ -43,7 +50,23 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
   const [companySettings, setCompanySettings] = useState<CompanySettings>(() => {
     const saved = localStorage.getItem('companySettings');
-    return saved ? JSON.parse(saved) : defaultCompanySettings;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate old data to new format
+      if (!parsed.customFields) {
+        parsed.customFields = [
+          { id: 'nif', label: 'NIF', value: parsed.nif || '', showInPdf: true, order: 1 },
+          { id: 'nis', label: 'NIS', value: parsed.nis || '', showInPdf: true, order: 2 },
+          { id: 'rc', label: 'RC', value: parsed.rc || '', showInPdf: true, order: 3 },
+          { id: 'ai', label: 'AI', value: '', showInPdf: true, order: 4 },
+        ];
+      }
+      if (!parsed.proprietaire) {
+        parsed.proprietaire = '';
+      }
+      return parsed;
+    }
+    return defaultCompanySettings;
   });
 
   useEffect(() => {

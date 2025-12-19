@@ -40,8 +40,17 @@ export interface Client {
   rc?: string;
 }
 
+export interface CompanyField {
+  id: string;
+  label: string;
+  value: string;
+  showInPdf: boolean;
+  order: number;
+}
+
 export interface CompanySettings {
   nom: string;
+  proprietaire: string; // Owner name - appears first in PDF
   logo?: string;
   adresse: string;
   ville: string;
@@ -49,12 +58,15 @@ export interface CompanySettings {
   telephone: string;
   email: string;
   siteWeb?: string;
+  // Legacy fields kept for backward compatibility
   nif: string;
   nis: string;
   rc: string;
   capitalSocial?: string;
   rib?: string;
   banque?: string;
+  // Custom fields with visibility control
+  customFields: CompanyField[];
 }
 
 export const INVOICE_TYPE_LABELS: Record<InvoiceType, string> = {
