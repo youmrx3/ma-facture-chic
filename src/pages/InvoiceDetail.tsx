@@ -158,13 +158,35 @@ export default function InvoiceDetail() {
     doc.setTextColor(0);
     doc.text('FACTURÉ À:', 14, 60);
     doc.setFontSize(10);
+    let clientY = 68;
     if (client) {
-      doc.text(client.nom, 14, 68);
+      if (client.nom) {
+        doc.text(client.nom, 14, clientY);
+        clientY += 6;
+      }
       doc.setTextColor(100);
-      if (client.adresse) doc.text(client.adresse, 14, 74);
-      if (client.ville) doc.text(`${client.codePostal} ${client.ville}`, 14, 80);
-      if (client.telephone) doc.text(`Tél: ${client.telephone}`, 14, 86);
-      if (client.nif) doc.text(`NIF: ${client.nif}`, 14, 92);
+      if (client.adresse) {
+        doc.text(client.adresse, 14, clientY);
+        clientY += 6;
+      }
+      if (client.ville || client.codePostal) {
+        doc.text(`${client.codePostal || ''} ${client.ville || ''}`.trim(), 14, clientY);
+        clientY += 6;
+      }
+      if (client.telephone) {
+        doc.text(`Tél: ${client.telephone}`, 14, clientY);
+        clientY += 6;
+      }
+      
+      // Client custom fields that are marked to show in PDF
+      const visibleClientFields = client.customFields
+        ?.filter((field) => field.showInPdf && field.value)
+        .sort((a, b) => a.order - b.order) || [];
+      
+      visibleClientFields.forEach((field) => {
+        doc.text(`${field.label}: ${field.value}`, 14, clientY);
+        clientY += 6;
+      });
     }
 
     // Table
@@ -344,14 +366,21 @@ export default function InvoiceDetail() {
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">FACTURÉ À</h3>
                     {client ? (
                       <>
-                        <p className="font-semibold">{client.nom}</p>
+                        {client.nom && <p className="font-semibold">{client.nom}</p>}
                         {client.adresse && <p className="text-sm text-muted-foreground">{client.adresse}</p>}
-                        {client.ville && (
+                        {(client.ville || client.codePostal) && (
                           <p className="text-sm text-muted-foreground">
                             {client.codePostal} {client.ville}
                           </p>
                         )}
-                        {client.nif && <p className="text-sm text-muted-foreground">NIF: {client.nif}</p>}
+                        {client.customFields
+                          ?.filter((field) => field.showInPdf && field.value)
+                          .sort((a, b) => a.order - b.order)
+                          .map((field) => (
+                            <p key={field.id} className="text-sm text-muted-foreground">
+                              {field.label}: {field.value}
+                            </p>
+                          ))}
                       </>
                     ) : (
                       <p className="text-muted-foreground">Client inconnu</p>
