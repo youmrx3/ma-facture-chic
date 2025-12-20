@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useInvoice } from '@/contexts/InvoiceContext';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,32 +19,52 @@ import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS } from '@/types/
 import { toast } from 'sonner';
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-DZ', {
+  return new Intl.NumberFormat('fr-FR', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount) + ' DA';
 };
 
-export default function CreateInvoice() {
+export default function EditInvoice() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { clients, addInvoice, getNextInvoiceNumber } = useInvoice();
+  const { invoices, clients, updateInvoice } = useInvoice();
+  
+  const existingInvoice = invoices.find((i) => i.id === id);
   
   const [invoiceType, setInvoiceType] = useState<InvoiceType>('facture');
   const [clientId, setClientId] = useState('');
   const [dateEcheance, setDateEcheance] = useState('');
   const [notes, setNotes] = useState('');
-  const [conditions, setConditions] = useState('Paiement à 30 jours');
-  const [items, setItems] = useState<InvoiceItem[]>([
-    {
-      id: crypto.randomUUID(),
-      description: '',
-      quantite: 1,
-      prixUnitaire: 0,
-      tva: 19,
-      total: 0,
-    },
-  ]);
+  const [conditions, setConditions] = useState('');
+  const [items, setItems] = useState<InvoiceItem[]>([]);
+
+  useEffect(() => {
+    if (existingInvoice) {
+      setInvoiceType(existingInvoice.type);
+      setClientId(existingInvoice.clientId);
+      setDateEcheance(existingInvoice.dateEcheance.split('T')[0]);
+      setNotes(existingInvoice.notes || '');
+      setConditions(existingInvoice.conditions || '');
+      setItems(existingInvoice.items);
+    }
+  }, [existingInvoice]);
+
+  if (!existingInvoice) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-lg font-medium text-muted-foreground">Facture non trouvée</p>
+            <Button className="mt-4" onClick={() => navigate('/factures')}>
+              Retour aux factures
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const calculateItemTotal = (item: InvoiceItem) => {
     const subtotal = item.quantite * item.prixUnitaire;
@@ -79,9 +99,9 @@ export default function CreateInvoice() {
     ]);
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (itemId: string) => {
     if (items.length > 1) {
-      setItems((prev) => prev.filter((item) => item.id !== id));
+      setItems((prev) => prev.filter((item) => item.id !== itemId));
     }
   };
 
@@ -103,14 +123,11 @@ export default function CreateInvoice() {
       return;
     }
 
-    const invoice: Invoice = {
-      id: crypto.randomUUID(),
-      numero: getNextInvoiceNumber(invoiceType),
+    const updatedInvoice: Invoice = {
+      ...existingInvoice,
       type: invoiceType,
-      status: 'brouillon',
       clientId,
-      dateCreation: new Date().toISOString(),
-      dateEcheance: dateEcheance || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      dateEcheance: dateEcheance || existingInvoice.dateEcheance,
       items,
       sousTotal,
       totalTva,
@@ -119,9 +136,9 @@ export default function CreateInvoice() {
       conditions,
     };
 
-    addInvoice(invoice);
-    toast.success('Facture créée avec succès');
-    navigate(`/factures/${invoice.id}`);
+    updateInvoice(updatedInvoice);
+    toast.success('Facture modifiée avec succès');
+    navigate(`/factures/${existingInvoice.id}`);
   };
 
   return (
@@ -133,9 +150,9 @@ export default function CreateInvoice() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Nouvelle Facture</h1>
+            <h1 className="text-3xl font-bold text-foreground">Modifier la Facture</h1>
             <p className="text-muted-foreground mt-1">
-              Créez une nouvelle facture ou document
+              {existingInvoice.numero}
             </p>
           </div>
         </div>
@@ -339,7 +356,7 @@ export default function CreateInvoice() {
                 <div className="pt-4 space-y-3">
                   <Button className="w-full" onClick={handleSubmit}>
                     <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
+                    Enregistrer les modifications
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => navigate(-1)}>
                     Annuler

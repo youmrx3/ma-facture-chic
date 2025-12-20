@@ -12,6 +12,7 @@ import {
   Building2,
   Calendar,
   CreditCard,
+  Pencil,
 } from 'lucide-react';
 import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus } from '@/types/invoice';
 import { toast } from 'sonner';
@@ -244,7 +245,7 @@ export default function InvoiceDetail() {
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TOTAL:', 140, totalsY + 20);
+    doc.text('TTC:', 140, totalsY + 20);
     doc.text(formatCurrencyForPDF(invoice.total), 195, totalsY + 20, { align: 'right' });
 
     // Notes & Conditions
@@ -336,6 +337,10 @@ export default function InvoiceDetail() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" onClick={() => navigate(`/factures/${invoice.id}/modifier`)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Modifier
+            </Button>
             <Button variant="outline" onClick={handleSendEmail}>
               <Send className="h-4 w-4 mr-2" />
               Envoyer
@@ -468,7 +473,7 @@ export default function InvoiceDetail() {
                     </div>
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
+                      <span>TTC</span>
                       <span className="text-primary">{formatCurrency(invoice.total)}</span>
                     </div>
                   </div>
