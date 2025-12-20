@@ -26,11 +26,15 @@ import {
 } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-DZ', {
+  return new Intl.NumberFormat('fr-FR', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount) + ' DA';
+};
+
+const formatCurrencyForPDF = (amount: number) => {
+  return amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' DA';
 };
 
 const formatDate = (dateString: string) => {
@@ -193,9 +197,9 @@ export default function InvoiceDetail() {
     const tableData = invoice.items.map((item) => [
       item.description,
       item.quantite.toString(),
-      formatCurrency(item.prixUnitaire),
+      formatCurrencyForPDF(item.prixUnitaire),
       `${item.tva}%`,
-      formatCurrency(item.total),
+      formatCurrencyForPDF(item.total),
     ]);
 
     autoTable(doc, {
@@ -212,32 +216,48 @@ export default function InvoiceDetail() {
         3: { halign: 'center', cellWidth: 20 },
         4: { halign: 'right', cellWidth: 35 },
       },
+      showHead: 'everyPage',
+      margin: { top: 20, bottom: 40 },
     });
 
     // Totals
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     
+    // Check if we need a new page for totals
+    const pageHeight = doc.internal.pageSize.height;
+    let totalsY = finalY;
+    if (finalY + 40 > pageHeight - 20) {
+      doc.addPage();
+      totalsY = 30;
+    }
+    
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text('Sous-total:', 140, finalY);
-    doc.text(formatCurrency(invoice.sousTotal), 180, finalY, { align: 'right' });
+    doc.text('T.H.T:', 140, totalsY);
+    doc.text(formatCurrencyForPDF(invoice.sousTotal), 180, totalsY, { align: 'right' });
     
-    doc.text('TVA:', 140, finalY + 7);
-    doc.text(formatCurrency(invoice.totalTva), 180, finalY + 7, { align: 'right' });
+    doc.text('T.TVA:', 140, totalsY + 7);
+    doc.text(formatCurrencyForPDF(invoice.totalTva), 180, totalsY + 7, { align: 'right' });
     
     doc.setDrawColor(200);
-    doc.line(140, finalY + 12, 195, finalY + 12);
+    doc.line(140, totalsY + 12, 195, totalsY + 12);
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TOTAL:', 140, finalY + 20);
-    doc.text(formatCurrency(invoice.total), 195, finalY + 20, { align: 'right' });
+    doc.text('TOTAL:', 140, totalsY + 20);
+    doc.text(formatCurrencyForPDF(invoice.total), 195, totalsY + 20, { align: 'right' });
 
     // Notes & Conditions
     if (invoice.notes || invoice.conditions) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      let noteY = finalY + 35;
+      let noteY = totalsY + 35;
+      
+      // Check if we need a new page
+      if (noteY > pageHeight - 30) {
+        doc.addPage();
+        noteY = 30;
+      }
       
       if (invoice.conditions) {
         doc.text(`Conditions: ${invoice.conditions}`, 14, noteY);
@@ -252,7 +272,14 @@ export default function InvoiceDetail() {
     if (companySettings.banque || companySettings.rib) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      const bankY = finalY + 50;
+      let bankY = totalsY + 50;
+      
+      // Check if we need a new page
+      if (bankY > pageHeight - 20) {
+        doc.addPage();
+        bankY = 30;
+      }
+      
       if (companySettings.banque) doc.text(`Banque: ${companySettings.banque}`, 14, bankY);
       if (companySettings.rib) doc.text(`RIB: ${companySettings.rib}`, 14, bankY + 6);
     }
@@ -432,11 +459,11 @@ export default function InvoiceDetail() {
                 <div className="flex justify-end">
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Sous-total</span>
+                      <span className="text-muted-foreground">T.H.T</span>
                       <span>{formatCurrency(invoice.sousTotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">TVA</span>
+                      <span className="text-muted-foreground">T.TVA</span>
                       <span>{formatCurrency(invoice.totalTva)}</span>
                     </div>
                     <div className="h-px bg-border my-2" />
