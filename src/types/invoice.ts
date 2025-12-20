@@ -27,17 +27,26 @@ export interface Invoice {
   conditions?: string;
 }
 
+export interface ClientField {
+  id: string;
+  label: string;
+  value: string;
+  showInPdf: boolean;
+  order: number;
+}
+
 export interface Client {
   id: string;
-  nom: string;
-  email: string;
-  telephone: string;
-  adresse: string;
-  ville: string;
-  codePostal: string;
+  nom?: string;
+  email?: string;
+  telephone?: string;
+  adresse?: string;
+  ville?: string;
+  codePostal?: string;
   nif?: string;
   nis?: string;
   rc?: string;
+  customFields?: ClientField[];
 }
 
 export interface CompanyField {

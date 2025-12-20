@@ -13,6 +13,8 @@ import {
   Trash2,
   Mail,
   Phone,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,19 +30,34 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Client } from '@/types/invoice';
+import { Switch } from '@/components/ui/switch';
+import { Client, ClientField } from '@/types/invoice';
 import { toast } from 'sonner';
 
-const emptyClient: Omit<Client, 'id'> = {
+interface ClientFormData {
+  nom: string;
+  email: string;
+  telephone: string;
+  adresse: string;
+  ville: string;
+  codePostal: string;
+  customFields: ClientField[];
+}
+
+const defaultCustomFields: ClientField[] = [
+  { id: 'nif', label: 'NIF', value: '', showInPdf: true, order: 1 },
+  { id: 'nis', label: 'NIS', value: '', showInPdf: true, order: 2 },
+  { id: 'rc', label: 'RC', value: '', showInPdf: true, order: 3 },
+];
+
+const emptyFormData: ClientFormData = {
   nom: '',
   email: '',
   telephone: '',
   adresse: '',
   ville: '',
   codePostal: '',
-  nif: '',
-  nis: '',
-  rc: '',
+  customFields: [...defaultCustomFields],
 };
 
 export default function ClientList() {
@@ -48,55 +65,96 @@ export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [formData, setFormData] = useState<Omit<Client, 'id'>>(emptyClient);
+  const [formData, setFormData] = useState<ClientFormData>(emptyFormData);
 
   const filteredClients = clients.filter((client) =>
-    client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (client.nom?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (client.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const handleOpenDialog = (client?: Client) => {
     if (client) {
       setEditingClient(client);
       setFormData({
-        nom: client.nom,
-        email: client.email,
-        telephone: client.telephone,
-        adresse: client.adresse,
-        ville: client.ville,
-        codePostal: client.codePostal,
-        nif: client.nif || '',
-        nis: client.nis || '',
-        rc: client.rc || '',
+        nom: client.nom || '',
+        email: client.email || '',
+        telephone: client.telephone || '',
+        adresse: client.adresse || '',
+        ville: client.ville || '',
+        codePostal: client.codePostal || '',
+        customFields: client.customFields || [
+          { id: 'nif', label: 'NIF', value: client.nif || '', showInPdf: true, order: 1 },
+          { id: 'nis', label: 'NIS', value: client.nis || '', showInPdf: true, order: 2 },
+          { id: 'rc', label: 'RC', value: client.rc || '', showInPdf: true, order: 3 },
+        ],
       });
     } else {
       setEditingClient(null);
-      setFormData(emptyClient);
+      setFormData({
+        ...emptyFormData,
+        customFields: [...defaultCustomFields],
+      });
     }
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!formData.nom || !formData.email) {
-      toast.error('Le nom et l\'email sont obligatoires');
-      return;
-    }
+    const clientData: Client = {
+      id: editingClient?.id || crypto.randomUUID(),
+      nom: formData.nom || undefined,
+      email: formData.email || undefined,
+      telephone: formData.telephone || undefined,
+      adresse: formData.adresse || undefined,
+      ville: formData.ville || undefined,
+      codePostal: formData.codePostal || undefined,
+      customFields: formData.customFields,
+    };
 
     if (editingClient) {
-      updateClient({ ...formData, id: editingClient.id });
+      updateClient(clientData);
       toast.success('Client mis à jour');
     } else {
-      addClient({ ...formData, id: crypto.randomUUID() });
+      addClient(clientData);
       toast.success('Client ajouté');
     }
     setIsDialogOpen(false);
-    setFormData(emptyClient);
+    setFormData(emptyFormData);
     setEditingClient(null);
   };
 
   const handleDelete = (id: string) => {
     deleteClient(id);
     toast.success('Client supprimé');
+  };
+
+  const handleAddCustomField = () => {
+    const newField: ClientField = {
+      id: crypto.randomUUID(),
+      label: '',
+      value: '',
+      showInPdf: true,
+      order: formData.customFields.length + 1,
+    };
+    setFormData({
+      ...formData,
+      customFields: [...formData.customFields, newField],
+    });
+  };
+
+  const handleUpdateCustomField = (id: string, updates: Partial<ClientField>) => {
+    setFormData({
+      ...formData,
+      customFields: formData.customFields.map((f) =>
+        f.id === id ? { ...f, ...updates } : f
+      ),
+    });
+  };
+
+  const handleDeleteCustomField = (id: string) => {
+    setFormData({
+      ...formData,
+      customFields: formData.customFields.filter((f) => f.id !== id),
+    });
   };
 
   return (
@@ -117,7 +175,7 @@ export default function ClientList() {
                 Nouveau Client
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingClient ? 'Modifier le Client' : 'Nouveau Client'}
@@ -126,7 +184,7 @@ export default function ClientList() {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Nom / Raison Sociale *</Label>
+                    <Label>Nom / Raison Sociale</Label>
                     <Input
                       value={formData.nom}
                       onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
@@ -134,7 +192,7 @@ export default function ClientList() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email *</Label>
+                    <Label>Email</Label>
                     <Input
                       type="email"
                       value={formData.email}
@@ -179,30 +237,59 @@ export default function ClientList() {
                     />
                   </div>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>NIF</Label>
-                    <Input
-                      value={formData.nif}
-                      onChange={(e) => setFormData({ ...formData, nif: e.target.value })}
-                      placeholder="Numéro d'Identification Fiscale"
-                    />
+
+                {/* Custom Fields Section */}
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Informations Légales</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddCustomField}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter un champ
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>NIS</Label>
-                    <Input
-                      value={formData.nis}
-                      onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
-                      placeholder="Numéro d'Identification Statistique"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>RC</Label>
-                    <Input
-                      value={formData.rc}
-                      onChange={(e) => setFormData({ ...formData, rc: e.target.value })}
-                      placeholder="Registre de Commerce"
-                    />
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des informations comme NIF, NIS, RC, AI, etc. et choisissez lesquelles apparaîtront sur le PDF.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {formData.customFields.map((field) => (
+                      <div key={field.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <div className="flex-1 grid gap-3 sm:grid-cols-2">
+                          <Input
+                            placeholder="Libellé (ex: NIF)"
+                            value={field.label}
+                            onChange={(e) => handleUpdateCustomField(field.id, { label: e.target.value })}
+                          />
+                          <Input
+                            placeholder="Valeur"
+                            value={field.value}
+                            onChange={(e) => handleUpdateCustomField(field.id, { value: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Switch
+                              checked={field.showInPdf}
+                              onCheckedChange={(checked) => handleUpdateCustomField(field.id, { showInPdf: checked })}
+                            />
+                            {field.showInPdf ? (
+                              <Eye className="h-4 w-4 text-primary" />
+                            ) : (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteCustomField(field.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -257,11 +344,11 @@ export default function ClientList() {
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                      {client.nom.charAt(0).toUpperCase()}
+                      {(client.nom || '?').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <CardTitle className="text-base">{client.nom}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{client.ville}</p>
+                      <CardTitle className="text-base">{client.nom || 'Sans nom'}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{client.ville || ''}</p>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -287,10 +374,12 @@ export default function ClientList() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
+                    {client.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        <span className="truncate">{client.email}</span>
+                      </div>
+                    )}
                     {client.telephone && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Phone className="h-4 w-4" />
