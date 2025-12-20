@@ -7,6 +7,7 @@ import { InvoiceProvider } from "@/contexts/InvoiceContext";
 import Dashboard from "./pages/Dashboard";
 import InvoiceList from "./pages/InvoiceList";
 import CreateInvoice from "./pages/CreateInvoice";
+import EditInvoice from "./pages/EditInvoice";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import ClientList from "./pages/ClientList";
 import Settings from "./pages/Settings";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/factures" element={<InvoiceList />} />
             <Route path="/factures/nouvelle" element={<CreateInvoice />} />
             <Route path="/factures/:id" element={<InvoiceDetail />} />
+            <Route path="/factures/:id/modifier" element={<EditInvoice />} />
             <Route path="/clients" element={<ClientList />} />
             <Route path="/parametres" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
