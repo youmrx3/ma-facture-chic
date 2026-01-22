@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Invoice, Client, CompanySettings } from '@/types/invoice';
 
+const DEFAULT_UNITS = ['Unité', 'm', 'm²', 'm³', 'kg', 'L', 'pcs', 'h', 'jour', 'forfait'];
+
 interface InvoiceContextType {
   invoices: Invoice[];
   clients: Client[];
   companySettings: CompanySettings;
+  units: string[];
   addInvoice: (invoice: Invoice) => void;
   updateInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
@@ -14,6 +17,7 @@ interface InvoiceContextType {
   updateCompanySettings: (settings: CompanySettings) => void;
   getClientById: (id: string) => Client | undefined;
   getNextInvoiceNumber: (type: Invoice['type']) => string;
+  addUnit: (unit: string) => void;
 }
 
 const defaultCompanySettings: CompanySettings = {
@@ -46,6 +50,11 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(() => {
     const saved = localStorage.getItem('clients');
     return saved ? JSON.parse(saved) : [];
+  });
+
+  const [units, setUnits] = useState<string[]>(() => {
+    const saved = localStorage.getItem('units');
+    return saved ? JSON.parse(saved) : DEFAULT_UNITS;
   });
 
   const [companySettings, setCompanySettings] = useState<CompanySettings>(() => {
@@ -81,6 +90,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('companySettings', JSON.stringify(companySettings));
   }, [companySettings]);
 
+  useEffect(() => {
+    localStorage.setItem('units', JSON.stringify(units));
+  }, [units]);
+
   const addInvoice = (invoice: Invoice) => {
     setInvoices((prev) => [...prev, invoice]);
   };
@@ -113,6 +126,12 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     return clients.find((c) => c.id === id);
   };
 
+  const addUnit = (unit: string) => {
+    if (unit && !units.includes(unit)) {
+      setUnits((prev) => [...prev, unit]);
+    }
+  };
+
   const getNextInvoiceNumber = (type: Invoice['type']) => {
     const year = new Date().getFullYear();
     const prefix = {
@@ -133,6 +152,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         invoices,
         clients,
         companySettings,
+        units,
         addInvoice,
         updateInvoice,
         deleteInvoice,
@@ -142,6 +162,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         updateCompanySettings,
         getClientById,
         getNextInvoiceNumber,
+        addUnit,
       }}
     >
       {children}

@@ -197,7 +197,7 @@ export default function InvoiceDetail() {
     // Table
     const tableData = invoice.items.map((item) => [
       item.description,
-      item.quantite.toString(),
+      `${item.quantite} ${item.unite || 'Unité'}`,
       formatCurrencyForPDF(item.prixUnitaire),
       `${item.tva}%`,
       formatCurrencyForPDF(item.total),
@@ -205,7 +205,7 @@ export default function InvoiceDetail() {
 
     autoTable(doc, {
       startY: 105,
-      head: [['Description', 'Qté', 'Prix Unit.', 'TVA', 'Total']],
+      head: [['Description', 'Qté', 'P.U', 'TVA', 'Total']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
@@ -441,7 +441,7 @@ export default function InvoiceDetail() {
                       <tr>
                         <th className="text-left p-3 text-sm font-semibold">Description</th>
                         <th className="text-center p-3 text-sm font-semibold">Qté</th>
-                        <th className="text-right p-3 text-sm font-semibold">Prix Unit.</th>
+                        <th className="text-right p-3 text-sm font-semibold">P.U</th>
                         <th className="text-center p-3 text-sm font-semibold">TVA</th>
                         <th className="text-right p-3 text-sm font-semibold">Total</th>
                       </tr>
@@ -450,7 +450,7 @@ export default function InvoiceDetail() {
                       {invoice.items.map((item) => (
                         <tr key={item.id} className="border-t">
                           <td className="p-3 text-sm">{item.description}</td>
-                          <td className="p-3 text-sm text-center">{item.quantite}</td>
+                          <td className="p-3 text-sm text-center">{item.quantite} {item.unite || 'Unité'}</td>
                           <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire)}</td>
                           <td className="p-3 text-sm text-center">{item.tva}%</td>
                           <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total)}</td>

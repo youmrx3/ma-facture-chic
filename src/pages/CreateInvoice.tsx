@@ -28,7 +28,7 @@ const formatCurrency = (amount: number) => {
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
-  const { clients, addInvoice, getNextInvoiceNumber } = useInvoice();
+  const { clients, addInvoice, getNextInvoiceNumber, units, addUnit } = useInvoice();
   
   const [invoiceType, setInvoiceType] = useState<InvoiceType>('facture');
   const [clientId, setClientId] = useState('');
@@ -40,11 +40,13 @@ export default function CreateInvoice() {
       id: crypto.randomUUID(),
       description: '',
       quantite: 1,
+      unite: 'Unité',
       prixUnitaire: 0,
       tva: 19,
       total: 0,
     },
   ]);
+  const [newUnit, setNewUnit] = useState('');
 
   const calculateItemTotal = (item: InvoiceItem) => {
     const subtotal = item.quantite * item.prixUnitaire;
@@ -72,11 +74,19 @@ export default function CreateInvoice() {
         id: crypto.randomUUID(),
         description: '',
         quantite: 1,
+        unite: 'Unité',
         prixUnitaire: 0,
         tva: 19,
         total: 0,
       },
     ]);
+  };
+
+  const handleAddUnit = () => {
+    if (newUnit.trim()) {
+      addUnit(newUnit.trim());
+      setNewUnit('');
+    }
   };
 
   const removeItem = (id: string) => {
@@ -237,7 +247,7 @@ export default function CreateInvoice() {
                           placeholder="Description de l'article ou service"
                         />
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-4">
+                      <div className="grid gap-4 sm:grid-cols-5">
                         <div className="space-y-2">
                           <Label>Quantité</Label>
                           <Input
@@ -248,7 +258,54 @@ export default function CreateInvoice() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Prix Unitaire (DA)</Label>
+                          <Label>Unité</Label>
+                          <Select
+                            value={item.unite}
+                            onValueChange={(v) => updateItem(item.id, 'unite', v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {units.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))}
+                              <div className="p-2 border-t">
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Nouvelle unité"
+                                    value={newUnit}
+                                    onChange={(e) => setNewUnit(e.target.value)}
+                                    className="h-8 text-sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      e.stopPropagation();
+                                      if (e.key === 'Enter') {
+                                        handleAddUnit();
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAddUnit();
+                                    }}
+                                    className="h-8"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>P.U (DA)</Label>
                           <Input
                             type="number"
                             min="0"

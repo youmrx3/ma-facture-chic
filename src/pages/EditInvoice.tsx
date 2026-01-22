@@ -29,7 +29,7 @@ const formatCurrency = (amount: number) => {
 export default function EditInvoice() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { invoices, clients, updateInvoice } = useInvoice();
+  const { invoices, clients, updateInvoice, units, addUnit } = useInvoice();
   
   const existingInvoice = invoices.find((i) => i.id === id);
   
@@ -39,6 +39,7 @@ export default function EditInvoice() {
   const [notes, setNotes] = useState('');
   const [conditions, setConditions] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [newUnit, setNewUnit] = useState('');
 
   useEffect(() => {
     if (existingInvoice) {
@@ -92,11 +93,19 @@ export default function EditInvoice() {
         id: crypto.randomUUID(),
         description: '',
         quantite: 1,
+        unite: 'Unité',
         prixUnitaire: 0,
         tva: 19,
         total: 0,
       },
     ]);
+  };
+
+  const handleAddUnit = () => {
+    if (newUnit.trim()) {
+      addUnit(newUnit.trim());
+      setNewUnit('');
+    }
   };
 
   const removeItem = (itemId: string) => {
@@ -254,7 +263,7 @@ export default function EditInvoice() {
                           placeholder="Description de l'article ou service"
                         />
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-4">
+                      <div className="grid gap-4 sm:grid-cols-5">
                         <div className="space-y-2">
                           <Label>Quantité</Label>
                           <Input
@@ -265,7 +274,54 @@ export default function EditInvoice() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Prix Unitaire (DA)</Label>
+                          <Label>Unité</Label>
+                          <Select
+                            value={item.unite || 'Unité'}
+                            onValueChange={(v) => updateItem(item.id, 'unite', v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {units.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))}
+                              <div className="p-2 border-t">
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Nouvelle unité"
+                                    value={newUnit}
+                                    onChange={(e) => setNewUnit(e.target.value)}
+                                    className="h-8 text-sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      e.stopPropagation();
+                                      if (e.key === 'Enter') {
+                                        handleAddUnit();
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAddUnit();
+                                    }}
+                                    className="h-8"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>P.U (DA)</Label>
                           <Input
                             type="number"
                             min="0"
