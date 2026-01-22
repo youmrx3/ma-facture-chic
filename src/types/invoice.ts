@@ -6,6 +6,7 @@ export interface InvoiceItem {
   id: string;
   description: string;
   quantite: number;
+  unite: string;
   prixUnitaire: number;
   tva: number;
   total: number;
