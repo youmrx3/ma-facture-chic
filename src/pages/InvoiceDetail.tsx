@@ -448,11 +448,13 @@ export default function InvoiceDetail() {
                     <span className="text-muted-foreground">Date:</span>
                     <span className="font-medium">{formatDate(invoice.dateCreation)}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Échéance:</span>
-                    <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
-                  </div>
+                  {invoice.showEcheance !== false && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Échéance:</span>
+                      <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Items Table */}
