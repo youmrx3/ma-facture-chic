@@ -203,9 +203,9 @@ export default function InvoiceDetail() {
     const tableData = invoice.items.map((item) => [
       item.description,
       `${item.quantite} ${item.unite || 'Unité'}`,
-      formatCurrencyForPDF(item.prixUnitaire),
+      formatCurrencyForPDF(item.prixUnitaire, showDA),
       `${item.tva}%`,
-      formatCurrencyForPDF(item.total),
+      formatCurrencyForPDF(item.total, showDA),
     ]);
 
     autoTable(doc, {
