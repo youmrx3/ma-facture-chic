@@ -275,9 +275,8 @@ export default function InvoiceDetail() {
     if (invoice.notes || invoice.conditions) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      let noteY = totalsY + 35;
+      let noteY = currentTotalY + 20;
       
-      // Check if we need a new page
       if (noteY > pageHeight - 30) {
         doc.addPage();
         noteY = 30;
@@ -296,9 +295,8 @@ export default function InvoiceDetail() {
     if (companySettings.banque || companySettings.rib) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      let bankY = totalsY + 50;
+      let bankY = currentTotalY + 35;
       
-      // Check if we need a new page
       if (bankY > pageHeight - 20) {
         doc.addPage();
         bankY = 30;
