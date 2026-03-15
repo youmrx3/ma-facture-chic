@@ -23,9 +23,15 @@ export interface Invoice {
   items: InvoiceItem[];
   sousTotal: number;
   totalTva: number;
+  remise?: number; // percentage
+  montantRemise?: number;
+  timbre?: number; // percentage
+  montantTimbre?: number;
   total: number;
   notes?: string;
   conditions?: string;
+  showEcheance?: boolean;
+  showDA?: boolean;
 }
 
 export interface ClientField {

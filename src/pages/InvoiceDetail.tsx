@@ -26,16 +26,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', {
+const formatCurrency = (amount: number, showDA = true) => {
+  const formatted = new Intl.NumberFormat('fr-FR', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount) + ' DA';
+  }).format(amount);
+  return showDA ? formatted + ' DA' : formatted;
 };
 
-const formatCurrencyForPDF = (amount: number) => {
-  return amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' DA';
+const formatCurrencyForPDF = (amount: number, showDA = true) => {
+  const formatted = amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return showDA ? formatted + ' DA' : formatted;
 };
 
 const formatDate = (dateString: string) => {
@@ -99,6 +101,7 @@ export default function InvoiceDetail() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
+    const showDA = invoice.showDA !== false;
     
     // Header
     doc.setFontSize(20);
@@ -109,7 +112,9 @@ export default function InvoiceDetail() {
     doc.setTextColor(100);
     doc.text(`N° ${invoice.numero}`, 14, 32);
     doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, 38);
-    doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
+    if (invoice.showEcheance !== false) {
+      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
+    }
 
     // Company Info - Owner name first, then company name
     let companyY = 25;
@@ -198,9 +203,9 @@ export default function InvoiceDetail() {
     const tableData = invoice.items.map((item) => [
       item.description,
       `${item.quantite} ${item.unite || 'Unité'}`,
-      formatCurrencyForPDF(item.prixUnitaire),
+      formatCurrencyForPDF(item.prixUnitaire, showDA),
       `${item.tva}%`,
-      formatCurrencyForPDF(item.total),
+      formatCurrencyForPDF(item.total, showDA),
     ]);
 
     autoTable(doc, {
@@ -235,26 +240,43 @@ export default function InvoiceDetail() {
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text('T.H.T:', 140, totalsY);
-    doc.text(formatCurrencyForPDF(invoice.sousTotal), 180, totalsY, { align: 'right' });
+    doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), 180, totalsY, { align: 'right' });
     
     doc.text('T.TVA:', 140, totalsY + 7);
-    doc.text(formatCurrencyForPDF(invoice.totalTva), 180, totalsY + 7, { align: 'right' });
+    doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), 180, totalsY + 7, { align: 'right' });
+    
+    let currentTotalY = totalsY + 14;
+    
+    // Remise
+    if (invoice.remise && invoice.montantRemise) {
+      doc.setTextColor(200, 50, 50);
+      doc.text(`Remise (${invoice.remise}%):`, 140, currentTotalY);
+      doc.text(`-${formatCurrencyForPDF(invoice.montantRemise, showDA)}`, 180, currentTotalY, { align: 'right' });
+      currentTotalY += 7;
+    }
+    
+    // Timbre
+    if (invoice.timbre && invoice.montantTimbre) {
+      doc.setTextColor(100);
+      doc.text(`Timbre (${invoice.timbre}%):`, 140, currentTotalY);
+      doc.text(`+${formatCurrencyForPDF(invoice.montantTimbre, showDA)}`, 180, currentTotalY, { align: 'right' });
+      currentTotalY += 7;
+    }
     
     doc.setDrawColor(200);
-    doc.line(140, totalsY + 12, 195, totalsY + 12);
+    doc.line(140, currentTotalY, 195, currentTotalY);
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TTC:', 140, totalsY + 20);
-    doc.text(formatCurrencyForPDF(invoice.total), 195, totalsY + 20, { align: 'right' });
+    doc.text('TTC:', 140, currentTotalY + 8);
+    doc.text(formatCurrencyForPDF(invoice.total, showDA), 195, currentTotalY + 8, { align: 'right' });
 
     // Notes & Conditions
     if (invoice.notes || invoice.conditions) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      let noteY = totalsY + 35;
+      let noteY = currentTotalY + 20;
       
-      // Check if we need a new page
       if (noteY > pageHeight - 30) {
         doc.addPage();
         noteY = 30;
@@ -273,9 +295,8 @@ export default function InvoiceDetail() {
     if (companySettings.banque || companySettings.rib) {
       doc.setFontSize(9);
       doc.setTextColor(100);
-      let bankY = totalsY + 50;
+      let bankY = currentTotalY + 35;
       
-      // Check if we need a new page
       if (bankY > pageHeight - 20) {
         doc.addPage();
         bankY = 30;
@@ -427,11 +448,13 @@ export default function InvoiceDetail() {
                     <span className="text-muted-foreground">Date:</span>
                     <span className="font-medium">{formatDate(invoice.dateCreation)}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Échéance:</span>
-                    <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
-                  </div>
+                  {invoice.showEcheance !== false && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Échéance:</span>
+                      <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Items Table */}
@@ -451,9 +474,9 @@ export default function InvoiceDetail() {
                         <tr key={item.id} className="border-t">
                           <td className="p-3 text-sm">{item.description}</td>
                           <td className="p-3 text-sm text-center">{item.quantite} {item.unite || 'Unité'}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire)}</td>
+                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire, invoice.showDA !== false)}</td>
                           <td className="p-3 text-sm text-center">{item.tva}%</td>
-                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total)}</td>
+                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total, invoice.showDA !== false)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -465,16 +488,28 @@ export default function InvoiceDetail() {
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">T.H.T</span>
-                      <span>{formatCurrency(invoice.sousTotal)}</span>
+                      <span>{formatCurrency(invoice.sousTotal, invoice.showDA !== false)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">T.TVA</span>
-                      <span>{formatCurrency(invoice.totalTva)}</span>
+                      <span>{formatCurrency(invoice.totalTva, invoice.showDA !== false)}</span>
                     </div>
+                    {invoice.remise && invoice.montantRemise ? (
+                      <div className="flex justify-between text-sm text-destructive">
+                        <span>- Remise ({invoice.remise}%)</span>
+                        <span>-{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
+                      </div>
+                    ) : null}
+                    {invoice.timbre && invoice.montantTimbre ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">+ Timbre ({invoice.timbre}%)</span>
+                        <span>+{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
+                      </div>
+                    ) : null}
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between font-bold text-lg">
                       <span>TTC</span>
-                      <span className="text-primary">{formatCurrency(invoice.total)}</span>
+                      <span className="text-primary">{formatCurrency(invoice.total, invoice.showDA !== false)}</span>
                     </div>
                   </div>
                 </div>

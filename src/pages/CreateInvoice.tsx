@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -18,12 +19,13 @@ import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
 import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS } from '@/types/invoice';
 import { toast } from 'sonner';
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-DZ', {
+const formatCurrency = (amount: number, showDA: boolean) => {
+  const formatted = new Intl.NumberFormat('fr-DZ', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount) + ' DA';
+  }).format(amount);
+  return showDA ? formatted + ' DA' : formatted;
 };
 
 export default function CreateInvoice() {
@@ -35,6 +37,10 @@ export default function CreateInvoice() {
   const [dateEcheance, setDateEcheance] = useState('');
   const [notes, setNotes] = useState('');
   const [conditions, setConditions] = useState('Paiement à 30 jours');
+  const [showEcheance, setShowEcheance] = useState(true);
+  const [showDA, setShowDA] = useState(true);
+  const [remise, setRemise] = useState(0);
+  const [timbre, setTimbre] = useState(0);
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: crypto.randomUUID(),
@@ -100,7 +106,10 @@ export default function CreateInvoice() {
     (sum, item) => sum + item.quantite * item.prixUnitaire * (item.tva / 100),
     0
   );
-  const total = sousTotal + totalTva;
+  const montantRemise = (sousTotal + totalTva) * (remise / 100);
+  const afterRemise = sousTotal + totalTva - montantRemise;
+  const montantTimbre = afterRemise * (timbre / 100);
+  const total = afterRemise + montantTimbre;
 
   const handleSubmit = () => {
     if (!clientId) {
@@ -124,9 +133,15 @@ export default function CreateInvoice() {
       items,
       sousTotal,
       totalTva,
+      remise: remise || undefined,
+      montantRemise: remise ? montantRemise : undefined,
+      timbre: timbre || undefined,
+      montantTimbre: timbre ? montantTimbre : undefined,
       total,
       notes,
       conditions,
+      showEcheance,
+      showDA,
     };
 
     addInvoice(invoice);
@@ -198,12 +213,22 @@ export default function CreateInvoice() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Date d'échéance</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Date d'échéance</Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Afficher</Label>
+                      <Switch checked={showEcheance} onCheckedChange={setShowEcheance} />
+                    </div>
+                  </div>
                   <Input
                     type="date"
                     value={dateEcheance}
                     onChange={(e) => setDateEcheance(e.target.value)}
                   />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher "DA" dans les prix</Label>
+                  <Switch checked={showDA} onCheckedChange={setShowDA} />
                 </div>
               </CardContent>
             </Card>
@@ -305,7 +330,7 @@ export default function CreateInvoice() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>P.U (DA)</Label>
+                          <Label>P.U {showDA ? '(DA)' : ''}</Label>
                           <Input
                             type="number"
                             min="0"
@@ -333,7 +358,7 @@ export default function CreateInvoice() {
                         <div className="space-y-2">
                           <Label>Total</Label>
                           <div className="h-10 flex items-center px-3 rounded-md border bg-muted font-medium">
-                            {formatCurrency(item.total)}
+                            {formatCurrency(item.total, showDA)}
                           </div>
                         </div>
                       </div>
@@ -380,16 +405,61 @@ export default function CreateInvoice() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">T.H.T</span>
-                    <span>{formatCurrency(sousTotal)}</span>
+                    <span>{formatCurrency(sousTotal, showDA)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">T.TVA</span>
-                    <span>{formatCurrency(totalTva)}</span>
+                    <span>{formatCurrency(totalTva, showDA)}</span>
                   </div>
+
+                  {/* Remise */}
+                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Remise (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={remise}
+                        onChange={(e) => setRemise(parseFloat(e.target.value) || 0)}
+                        className="w-24 h-8 text-sm"
+                      />
+                    </div>
+                    {remise > 0 && (
+                      <div className="flex justify-between text-sm text-destructive">
+                        <span>- Remise ({remise}%)</span>
+                        <span>-{formatCurrency(montantRemise, showDA)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Timbre */}
+                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Timbre (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={timbre}
+                        onChange={(e) => setTimbre(parseFloat(e.target.value) || 0)}
+                        className="w-24 h-8 text-sm"
+                      />
+                    </div>
+                    {timbre > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>+ Timbre ({timbre}%)</span>
+                        <span>+{formatCurrency(montantTimbre, showDA)}</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="h-px bg-border" />
                   <div className="flex justify-between font-bold text-lg">
                     <span>TTC</span>
-                    <span className="text-primary">{formatCurrency(total)}</span>
+                    <span className="text-primary">{formatCurrency(total, showDA)}</span>
                   </div>
                 </div>
 
