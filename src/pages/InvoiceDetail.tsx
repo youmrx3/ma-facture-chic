@@ -474,9 +474,9 @@ export default function InvoiceDetail() {
                         <tr key={item.id} className="border-t">
                           <td className="p-3 text-sm">{item.description}</td>
                           <td className="p-3 text-sm text-center">{item.quantite} {item.unite || 'Unité'}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire)}</td>
+                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire, invoice.showDA !== false)}</td>
                           <td className="p-3 text-sm text-center">{item.tva}%</td>
-                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total)}</td>
+                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total, invoice.showDA !== false)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -488,16 +488,28 @@ export default function InvoiceDetail() {
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">T.H.T</span>
-                      <span>{formatCurrency(invoice.sousTotal)}</span>
+                      <span>{formatCurrency(invoice.sousTotal, invoice.showDA !== false)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">T.TVA</span>
-                      <span>{formatCurrency(invoice.totalTva)}</span>
+                      <span>{formatCurrency(invoice.totalTva, invoice.showDA !== false)}</span>
                     </div>
+                    {invoice.remise && invoice.montantRemise ? (
+                      <div className="flex justify-between text-sm text-destructive">
+                        <span>- Remise ({invoice.remise}%)</span>
+                        <span>-{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
+                      </div>
+                    ) : null}
+                    {invoice.timbre && invoice.montantTimbre ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">+ Timbre ({invoice.timbre}%)</span>
+                        <span>+{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
+                      </div>
+                    ) : null}
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between font-bold text-lg">
                       <span>TTC</span>
-                      <span className="text-primary">{formatCurrency(invoice.total)}</span>
+                      <span className="text-primary">{formatCurrency(invoice.total, invoice.showDA !== false)}</span>
                     </div>
                   </div>
                 </div>
