@@ -101,6 +101,7 @@ export default function InvoiceDetail() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
+    const showDA = invoice.showDA !== false;
     
     // Header
     doc.setFontSize(20);
@@ -111,7 +112,9 @@ export default function InvoiceDetail() {
     doc.setTextColor(100);
     doc.text(`N° ${invoice.numero}`, 14, 32);
     doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, 38);
-    doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
+    if (invoice.showEcheance !== false) {
+      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
+    }
 
     // Company Info - Owner name first, then company name
     let companyY = 25;
