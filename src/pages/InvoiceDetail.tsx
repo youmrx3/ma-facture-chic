@@ -26,16 +26,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', {
+const formatCurrency = (amount: number, showDA = true) => {
+  const formatted = new Intl.NumberFormat('fr-FR', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount) + ' DA';
+  }).format(amount);
+  return showDA ? formatted + ' DA' : formatted;
 };
 
-const formatCurrencyForPDF = (amount: number) => {
-  return amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' DA';
+const formatCurrencyForPDF = (amount: number, showDA = true) => {
+  const formatted = amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return showDA ? formatted + ' DA' : formatted;
 };
 
 const formatDate = (dateString: string) => {
