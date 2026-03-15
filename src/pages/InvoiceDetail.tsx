@@ -237,39 +237,42 @@ export default function InvoiceDetail() {
       totalsY = 30;
     }
     
+    const rightX = 195;
+    const labelX = 140;
+    
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text('T.H.T:', 140, totalsY);
-    doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), 180, totalsY, { align: 'right' });
+    doc.text('T.H.T:', labelX, totalsY);
+    doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, totalsY, { align: 'right' });
     
-    doc.text('T.TVA:', 140, totalsY + 7);
-    doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), 180, totalsY + 7, { align: 'right' });
+    doc.text('T.TVA:', labelX, totalsY + 7);
+    doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, totalsY + 7, { align: 'right' });
     
     let currentTotalY = totalsY + 14;
     
     // Remise
     if (invoice.remise && invoice.montantRemise) {
       doc.setTextColor(200, 50, 50);
-      doc.text(`Remise (${invoice.remise}%):`, 140, currentTotalY);
-      doc.text(`-${formatCurrencyForPDF(invoice.montantRemise, showDA)}`, 180, currentTotalY, { align: 'right' });
+      doc.text(`Remise (${invoice.remise}%):`, labelX, currentTotalY);
+      doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
       currentTotalY += 7;
     }
     
     // Timbre
     if (invoice.timbre && invoice.montantTimbre) {
       doc.setTextColor(100);
-      doc.text(`Timbre (${invoice.timbre}%):`, 140, currentTotalY);
-      doc.text(`+${formatCurrencyForPDF(invoice.montantTimbre, showDA)}`, 180, currentTotalY, { align: 'right' });
+      doc.text(`Timbre (${invoice.timbre}%):`, labelX, currentTotalY);
+      doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
       currentTotalY += 7;
     }
     
     doc.setDrawColor(200);
-    doc.line(140, currentTotalY, 195, currentTotalY);
+    doc.line(labelX, currentTotalY, rightX, currentTotalY);
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TTC:', 140, currentTotalY + 8);
-    doc.text(formatCurrencyForPDF(invoice.total, showDA), 195, currentTotalY + 8, { align: 'right' });
+    doc.text('TTC:', labelX, currentTotalY + 8);
+    doc.text(formatCurrencyForPDF(invoice.total, showDA), rightX, currentTotalY + 8, { align: 'right' });
 
     // Notes & Conditions
     if (invoice.notes || invoice.conditions) {
@@ -496,14 +499,14 @@ export default function InvoiceDetail() {
                     </div>
                     {invoice.remise && invoice.montantRemise ? (
                       <div className="flex justify-between text-sm text-destructive">
-                        <span>- Remise ({invoice.remise}%)</span>
-                        <span>-{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
+                        <span>Remise ({invoice.remise}%)</span>
+                        <span>{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
                       </div>
                     ) : null}
                     {invoice.timbre && invoice.montantTimbre ? (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">+ Timbre ({invoice.timbre}%)</span>
-                        <span>+{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
+                        <span className="text-muted-foreground">Timbre ({invoice.timbre}%)</span>
+                        <span>{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
                       </div>
                     ) : null}
                     <div className="h-px bg-border my-2" />
