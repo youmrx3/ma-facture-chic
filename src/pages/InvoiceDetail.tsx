@@ -499,14 +499,14 @@ export default function InvoiceDetail() {
                     </div>
                     {invoice.remise && invoice.montantRemise ? (
                       <div className="flex justify-between text-sm text-destructive">
-                        <span>- Remise ({invoice.remise}%)</span>
-                        <span>-{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
+                        <span>Remise ({invoice.remise}%)</span>
+                        <span>{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
                       </div>
                     ) : null}
                     {invoice.timbre && invoice.montantTimbre ? (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">+ Timbre ({invoice.timbre}%)</span>
-                        <span>+{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
+                        <span className="text-muted-foreground">Timbre ({invoice.timbre}%)</span>
+                        <span>{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
                       </div>
                     ) : null}
                     <div className="h-px bg-border my-2" />
