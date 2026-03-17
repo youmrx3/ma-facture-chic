@@ -145,6 +145,8 @@ export default function CreateInvoice() {
       conditions,
       showEcheance,
       showDA,
+      summaryLabels,
+      summaryOrder,
     };
 
     addInvoice(invoice);
