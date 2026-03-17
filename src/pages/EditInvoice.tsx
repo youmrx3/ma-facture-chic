@@ -61,6 +61,7 @@ export default function EditInvoice() {
       setItems(existingInvoice.items);
       setShowEcheance(existingInvoice.showEcheance !== false);
       setShowDA(existingInvoice.showDA !== false);
+      setShowLogo(existingInvoice.showLogo !== false);
       setRemise(existingInvoice.remise || 0);
       setTimbre(existingInvoice.timbre || 0);
       setSummaryLabels(existingInvoice.summaryLabels || { ...DEFAULT_SUMMARY_LABELS });
