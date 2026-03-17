@@ -12,6 +12,16 @@ export interface InvoiceItem {
   total: number;
 }
 
+export const DEFAULT_SUMMARY_LABELS: Record<string, string> = {
+  tht: 'T.H.T',
+  ttva: 'T.TVA',
+  remise: 'Remise',
+  timbre: 'Timbre',
+  ttc: 'TTC',
+};
+
+export const DEFAULT_SUMMARY_ORDER = ['tht', 'ttva', 'remise', 'timbre', 'ttc'];
+
 export interface Invoice {
   id: string;
   numero: string;
@@ -32,6 +42,8 @@ export interface Invoice {
   conditions?: string;
   showEcheance?: boolean;
   showDA?: boolean;
+  summaryLabels?: Record<string, string>;
+  summaryOrder?: string[];
 }
 
 export interface ClientField {
