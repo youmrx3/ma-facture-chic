@@ -43,6 +43,7 @@ export default function EditInvoice() {
   const [conditions, setConditions] = useState('');
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
+  const [showLogo, setShowLogo] = useState(true);
   const [remise, setRemise] = useState(0);
   const [timbre, setTimbre] = useState(0);
   const [summaryLabels, setSummaryLabels] = useState<Record<string, string>>({ ...DEFAULT_SUMMARY_LABELS });
@@ -60,6 +61,7 @@ export default function EditInvoice() {
       setItems(existingInvoice.items);
       setShowEcheance(existingInvoice.showEcheance !== false);
       setShowDA(existingInvoice.showDA !== false);
+      setShowLogo(existingInvoice.showLogo !== false);
       setRemise(existingInvoice.remise || 0);
       setTimbre(existingInvoice.timbre || 0);
       setSummaryLabels(existingInvoice.summaryLabels || { ...DEFAULT_SUMMARY_LABELS });
@@ -167,6 +169,7 @@ export default function EditInvoice() {
       conditions,
       showEcheance,
       showDA,
+      showLogo,
       summaryLabels,
       summaryOrder,
     };
@@ -256,6 +259,10 @@ export default function EditInvoice() {
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                   <Label>Afficher "DA" dans les prix</Label>
                   <Switch checked={showDA} onCheckedChange={setShowDA} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher le logo</Label>
+                  <Switch checked={showLogo} onCheckedChange={setShowLogo} />
                 </div>
               </CardContent>
             </Card>
