@@ -167,6 +167,8 @@ export default function EditInvoice() {
       conditions,
       showEcheance,
       showDA,
+      summaryLabels,
+      summaryOrder,
     };
 
     updateInvoice(updatedInvoice);
