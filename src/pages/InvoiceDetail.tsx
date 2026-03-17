@@ -103,6 +103,15 @@ export default function InvoiceDetail() {
     const doc = new jsPDF();
     const showDA = invoice.showDA !== false;
     
+    // Logo in top-right
+    if (companySettings.logo) {
+      try {
+        doc.addImage(companySettings.logo, 'PNG', 160, 10, 35, 18);
+      } catch (e) {
+        // fallback: skip logo if format unsupported
+      }
+    }
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(30, 58, 138);
