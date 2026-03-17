@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS } from '@/types/invoice';
+import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
+import { SummaryEditor } from '@/components/SummaryEditor';
 import { toast } from 'sonner';
 
 const formatCurrency = (amount: number, showDA: boolean) => {
