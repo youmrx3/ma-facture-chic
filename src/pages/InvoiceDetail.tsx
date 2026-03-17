@@ -118,18 +118,18 @@ export default function InvoiceDetail() {
     // Header
     doc.setFontSize(20);
     doc.setTextColor(30, 58, 138);
-    doc.text(INVOICE_TYPE_LABELS[invoice.type].toUpperCase(), 14, 25);
+    doc.text(INVOICE_TYPE_LABELS[invoice.type].toUpperCase(), 14, headerStartY);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`N° ${invoice.numero}`, 14, 32);
-    doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, 38);
+    doc.text(`N° ${invoice.numero}`, 14, headerStartY + 7);
+    doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, headerStartY + 13);
     if (invoice.showEcheance !== false) {
-      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, 44);
+      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, headerStartY + 19);
     }
 
     // Company Info - Owner name first, then company name
-    let companyY = 25;
+    let companyY = headerStartY;
     doc.setFontSize(12);
     doc.setTextColor(0);
     
