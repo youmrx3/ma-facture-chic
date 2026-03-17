@@ -430,15 +430,6 @@ export default function EditInvoice() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">T.H.T</span>
-                    <span>{formatCurrency(sousTotal, showDA)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">T.TVA</span>
-                    <span>{formatCurrency(totalTva, showDA)}</span>
-                  </div>
-
                   {/* Remise */}
                   <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
                     <div className="flex items-center justify-between">
@@ -453,12 +444,6 @@ export default function EditInvoice() {
                         className="w-24 h-8 text-sm"
                       />
                     </div>
-                    {remise > 0 && (
-                      <div className="flex justify-between text-sm text-destructive">
-                        <span>- Remise ({remise}%)</span>
-                        <span>-{formatCurrency(montantRemise, showDA)}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Timbre */}
@@ -475,19 +460,26 @@ export default function EditInvoice() {
                         className="w-24 h-8 text-sm"
                       />
                     </div>
-                    {timbre > 0 && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>+ Timbre ({timbre}%)</span>
-                        <span>+{formatCurrency(montantTimbre, showDA)}</span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="h-px bg-border" />
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>TTC</span>
-                    <span className="text-primary">{formatCurrency(total, showDA)}</span>
-                  </div>
+                  <Label className="text-xs text-muted-foreground">Survolez pour réordonner ou renommer</Label>
+
+                  <SummaryEditor
+                    summaryLabels={summaryLabels}
+                    summaryOrder={summaryOrder}
+                    onLabelsChange={setSummaryLabels}
+                    onOrderChange={setSummaryOrder}
+                    sousTotal={sousTotal}
+                    totalTva={totalTva}
+                    remise={remise}
+                    montantRemise={montantRemise}
+                    timbre={timbre}
+                    montantTimbre={montantTimbre}
+                    total={total}
+                    showDA={showDA}
+                    formatCurrency={formatCurrency}
+                  />
                 </div>
 
                 <div className="pt-4 space-y-3">
