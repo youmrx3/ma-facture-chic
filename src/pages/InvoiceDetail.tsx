@@ -235,10 +235,8 @@ export default function InvoiceDetail() {
       margin: { top: 20, bottom: 40 },
     });
 
-    // Totals
+    // Totals - using custom labels and order
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    
-    // Check if we need a new page for totals
     const pageHeight = doc.internal.pageSize.height;
     let totalsY = finalY;
     if (finalY + 40 > pageHeight - 20) {
@@ -248,31 +246,41 @@ export default function InvoiceDetail() {
     
     const rightX = 195;
     const labelX = 140;
+    const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
+    const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
     
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('T.H.T:', labelX, totalsY);
-    doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, totalsY, { align: 'right' });
-    
-    doc.text('T.TVA:', labelX, totalsY + 7);
-    doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, totalsY + 7, { align: 'right' });
-    
-    let currentTotalY = totalsY + 14;
-    
-    // Remise
-    if (invoice.remise && invoice.montantRemise) {
-      doc.setTextColor(200, 50, 50);
-      doc.text(`Remise (${invoice.remise}%):`, labelX, currentTotalY);
-      doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
-      currentTotalY += 7;
-    }
-    
-    // Timbre
-    if (invoice.timbre && invoice.montantTimbre) {
-      doc.setTextColor(100);
-      doc.text(`Timbre (${invoice.timbre}%):`, labelX, currentTotalY);
-      doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
-      currentTotalY += 7;
+    let currentTotalY = totalsY;
+
+    // Render rows in custom order, TTC last with separator
+    const nonTtcItems = order.filter(k => k !== 'ttc');
+    const ttcKey = order.includes('ttc') ? 'ttc' : null;
+
+    for (const key of nonTtcItems) {
+      if (key === 'tht') {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.tht || 'T.H.T'}:`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'ttva') {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.ttva || 'T.TVA'}:`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'remise' && invoice.remise && invoice.montantRemise) {
+        doc.setFontSize(10);
+        doc.setTextColor(200, 50, 50);
+        doc.text(`${labels.remise || 'Remise'} (${invoice.remise}%):`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.timbre || 'Timbre'} (${invoice.timbre}%):`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      }
     }
     
     doc.setDrawColor(200);
@@ -280,7 +288,7 @@ export default function InvoiceDetail() {
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TTC:', labelX, currentTotalY + 8);
+    doc.text(`${labels.ttc || 'TTC'}:`, labelX, currentTotalY + 8);
     doc.text(formatCurrencyForPDF(invoice.total, showDA), rightX, currentTotalY + 8, { align: 'right' });
 
     // Notes & Conditions
