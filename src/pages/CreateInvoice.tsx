@@ -40,6 +40,7 @@ export default function CreateInvoice() {
   const [conditions, setConditions] = useState('Paiement à 30 jours');
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
+  const [showLogo, setShowLogo] = useState(true);
   const [remise, setRemise] = useState(0);
   const [timbre, setTimbre] = useState(0);
   const [summaryLabels, setSummaryLabels] = useState<Record<string, string>>({ ...DEFAULT_SUMMARY_LABELS });
