@@ -42,6 +42,7 @@ export interface Invoice {
   conditions?: string;
   showEcheance?: boolean;
   showDA?: boolean;
+  showLogo?: boolean;
   summaryLabels?: Record<string, string>;
   summaryOrder?: string[];
 }

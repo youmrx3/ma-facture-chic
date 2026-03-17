@@ -103,10 +103,13 @@ export default function InvoiceDetail() {
     const doc = new jsPDF();
     const showDA = invoice.showDA !== false;
     
-    // Logo in top-right
-    if (companySettings.logo) {
+    // Logo in top-left corner, above everything
+    const showLogo = invoice.showLogo !== false;
+    let headerStartY = 15;
+    if (showLogo && companySettings.logo) {
       try {
-        doc.addImage(companySettings.logo, 'PNG', 160, 10, 35, 18);
+        doc.addImage(companySettings.logo, 'PNG', 14, 10, 35, 18);
+        headerStartY = 35; // push content below logo
       } catch (e) {
         // fallback: skip logo if format unsupported
       }

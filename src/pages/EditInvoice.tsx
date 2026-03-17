@@ -260,6 +260,10 @@ export default function EditInvoice() {
                   <Label>Afficher "DA" dans les prix</Label>
                   <Switch checked={showDA} onCheckedChange={setShowDA} />
                 </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher le logo</Label>
+                  <Switch checked={showLogo} onCheckedChange={setShowLogo} />
+                </div>
               </CardContent>
             </Card>
 
