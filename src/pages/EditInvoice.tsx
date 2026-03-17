@@ -62,6 +62,8 @@ export default function EditInvoice() {
       setShowDA(existingInvoice.showDA !== false);
       setRemise(existingInvoice.remise || 0);
       setTimbre(existingInvoice.timbre || 0);
+      setSummaryLabels(existingInvoice.summaryLabels || { ...DEFAULT_SUMMARY_LABELS });
+      setSummaryOrder(existingInvoice.summaryOrder || [...DEFAULT_SUMMARY_ORDER]);
     }
   }, [existingInvoice]);
 
