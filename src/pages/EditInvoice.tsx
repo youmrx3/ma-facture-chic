@@ -45,6 +45,8 @@ export default function EditInvoice() {
   const [showDA, setShowDA] = useState(true);
   const [remise, setRemise] = useState(0);
   const [timbre, setTimbre] = useState(0);
+  const [summaryLabels, setSummaryLabels] = useState<Record<string, string>>({ ...DEFAULT_SUMMARY_LABELS });
+  const [summaryOrder, setSummaryOrder] = useState<string[]>([...DEFAULT_SUMMARY_ORDER]);
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [newUnit, setNewUnit] = useState('');
 
