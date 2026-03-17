@@ -14,7 +14,7 @@ import {
   CreditCard,
   Pencil,
 } from 'lucide-react';
-import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus } from '@/types/invoice';
+import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -103,6 +103,15 @@ export default function InvoiceDetail() {
     const doc = new jsPDF();
     const showDA = invoice.showDA !== false;
     
+    // Logo in top-right
+    if (companySettings.logo) {
+      try {
+        doc.addImage(companySettings.logo, 'PNG', 160, 10, 35, 18);
+      } catch (e) {
+        // fallback: skip logo if format unsupported
+      }
+    }
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(30, 58, 138);
@@ -226,10 +235,8 @@ export default function InvoiceDetail() {
       margin: { top: 20, bottom: 40 },
     });
 
-    // Totals
+    // Totals - using custom labels and order
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    
-    // Check if we need a new page for totals
     const pageHeight = doc.internal.pageSize.height;
     let totalsY = finalY;
     if (finalY + 40 > pageHeight - 20) {
@@ -239,31 +246,41 @@ export default function InvoiceDetail() {
     
     const rightX = 195;
     const labelX = 140;
+    const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
+    const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
     
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('T.H.T:', labelX, totalsY);
-    doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, totalsY, { align: 'right' });
-    
-    doc.text('T.TVA:', labelX, totalsY + 7);
-    doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, totalsY + 7, { align: 'right' });
-    
-    let currentTotalY = totalsY + 14;
-    
-    // Remise
-    if (invoice.remise && invoice.montantRemise) {
-      doc.setTextColor(200, 50, 50);
-      doc.text(`Remise (${invoice.remise}%):`, labelX, currentTotalY);
-      doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
-      currentTotalY += 7;
-    }
-    
-    // Timbre
-    if (invoice.timbre && invoice.montantTimbre) {
-      doc.setTextColor(100);
-      doc.text(`Timbre (${invoice.timbre}%):`, labelX, currentTotalY);
-      doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
-      currentTotalY += 7;
+    let currentTotalY = totalsY;
+
+    // Render rows in custom order, TTC last with separator
+    const nonTtcItems = order.filter(k => k !== 'ttc');
+    const ttcKey = order.includes('ttc') ? 'ttc' : null;
+
+    for (const key of nonTtcItems) {
+      if (key === 'tht') {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.tht || 'T.H.T'}:`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'ttva') {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.ttva || 'T.TVA'}:`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'remise' && invoice.remise && invoice.montantRemise) {
+        doc.setFontSize(10);
+        doc.setTextColor(200, 50, 50);
+        doc.text(`${labels.remise || 'Remise'} (${invoice.remise}%):`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      } else if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`${labels.timbre || 'Timbre'} (${invoice.timbre}%):`, labelX, currentTotalY);
+        doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
+        currentTotalY += 7;
+      }
     }
     
     doc.setDrawColor(200);
@@ -271,7 +288,7 @@ export default function InvoiceDetail() {
     
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text('TTC:', labelX, currentTotalY + 8);
+    doc.text(`${labels.ttc || 'TTC'}:`, labelX, currentTotalY + 8);
     doc.text(formatCurrencyForPDF(invoice.total, showDA), rightX, currentTotalY + 8, { align: 'right' });
 
     // Notes & Conditions
@@ -486,34 +503,53 @@ export default function InvoiceDetail() {
                   </table>
                 </div>
 
-                {/* Totals */}
+                {/* Totals - custom labels & order */}
                 <div className="flex justify-end">
                   <div className="w-64 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">T.H.T</span>
-                      <span>{formatCurrency(invoice.sousTotal, invoice.showDA !== false)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">T.TVA</span>
-                      <span>{formatCurrency(invoice.totalTva, invoice.showDA !== false)}</span>
-                    </div>
-                    {invoice.remise && invoice.montantRemise ? (
-                      <div className="flex justify-between text-sm text-destructive">
-                        <span>Remise ({invoice.remise}%)</span>
-                        <span>{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
-                      </div>
-                    ) : null}
-                    {invoice.timbre && invoice.montantTimbre ? (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Timbre ({invoice.timbre}%)</span>
-                        <span>{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
-                      </div>
-                    ) : null}
-                    <div className="h-px bg-border my-2" />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>TTC</span>
-                      <span className="text-primary">{formatCurrency(invoice.total, invoice.showDA !== false)}</span>
-                    </div>
+                    {(() => {
+                      const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
+                      const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
+                      const showDAVal = invoice.showDA !== false;
+                      
+                      const renderRow = (key: string) => {
+                        if (key === 'tht') return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.tht || 'T.H.T'}</span>
+                            <span>{formatCurrency(invoice.sousTotal, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'ttva') return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.ttva || 'T.TVA'}</span>
+                            <span>{formatCurrency(invoice.totalTva, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'remise' && invoice.remise && invoice.montantRemise) return (
+                          <div key={key} className="flex justify-between text-sm text-destructive">
+                            <span>{labels.remise || 'Remise'} ({invoice.remise}%)</span>
+                            <span>{formatCurrency(invoice.montantRemise, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.timbre || 'Timbre'} ({invoice.timbre}%)</span>
+                            <span>{formatCurrency(invoice.montantTimbre, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'ttc') return (
+                          <div key={key}>
+                            <div className="h-px bg-border my-2" />
+                            <div className="flex justify-between font-bold text-lg">
+                              <span>{labels.ttc || 'TTC'}</span>
+                              <span className="text-primary">{formatCurrency(invoice.total, showDAVal)}</span>
+                            </div>
+                          </div>
+                        );
+                        return null;
+                      };
+
+                      return order.map(renderRow);
+                    })()}
                   </div>
                 </div>
 
