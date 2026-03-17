@@ -503,34 +503,53 @@ export default function InvoiceDetail() {
                   </table>
                 </div>
 
-                {/* Totals */}
+                {/* Totals - custom labels & order */}
                 <div className="flex justify-end">
                   <div className="w-64 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">T.H.T</span>
-                      <span>{formatCurrency(invoice.sousTotal, invoice.showDA !== false)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">T.TVA</span>
-                      <span>{formatCurrency(invoice.totalTva, invoice.showDA !== false)}</span>
-                    </div>
-                    {invoice.remise && invoice.montantRemise ? (
-                      <div className="flex justify-between text-sm text-destructive">
-                        <span>Remise ({invoice.remise}%)</span>
-                        <span>{formatCurrency(invoice.montantRemise, invoice.showDA !== false)}</span>
-                      </div>
-                    ) : null}
-                    {invoice.timbre && invoice.montantTimbre ? (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Timbre ({invoice.timbre}%)</span>
-                        <span>{formatCurrency(invoice.montantTimbre, invoice.showDA !== false)}</span>
-                      </div>
-                    ) : null}
-                    <div className="h-px bg-border my-2" />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>TTC</span>
-                      <span className="text-primary">{formatCurrency(invoice.total, invoice.showDA !== false)}</span>
-                    </div>
+                    {(() => {
+                      const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
+                      const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
+                      const showDAVal = invoice.showDA !== false;
+                      
+                      const renderRow = (key: string) => {
+                        if (key === 'tht') return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.tht || 'T.H.T'}</span>
+                            <span>{formatCurrency(invoice.sousTotal, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'ttva') return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.ttva || 'T.TVA'}</span>
+                            <span>{formatCurrency(invoice.totalTva, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'remise' && invoice.remise && invoice.montantRemise) return (
+                          <div key={key} className="flex justify-between text-sm text-destructive">
+                            <span>{labels.remise || 'Remise'} ({invoice.remise}%)</span>
+                            <span>{formatCurrency(invoice.montantRemise, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) return (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{labels.timbre || 'Timbre'} ({invoice.timbre}%)</span>
+                            <span>{formatCurrency(invoice.montantTimbre, showDAVal)}</span>
+                          </div>
+                        );
+                        if (key === 'ttc') return (
+                          <div key={key}>
+                            <div className="h-px bg-border my-2" />
+                            <div className="flex justify-between font-bold text-lg">
+                              <span>{labels.ttc || 'TTC'}</span>
+                              <span className="text-primary">{formatCurrency(invoice.total, showDAVal)}</span>
+                            </div>
+                          </div>
+                        );
+                        return null;
+                      };
+
+                      return order.map(renderRow);
+                    })()}
                   </div>
                 </div>
 
