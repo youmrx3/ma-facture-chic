@@ -132,18 +132,13 @@ export default function CreateInvoice() {
       items,
       sousTotal,
       totalTva,
-      remise: remise || undefined,
-      montantRemise: remise ? montantRemise : undefined,
-      timbre: timbre || undefined,
-      montantTimbre: timbre ? montantTimbre : undefined,
       total,
       notes,
       conditions,
       showEcheance,
       showDA,
       showLogo,
-      summaryLabels,
-      summaryOrder,
+      summaryRows,
     };
 
     addInvoice(invoice);
