@@ -505,52 +505,46 @@ export default function InvoiceDetail() {
                   </table>
                 </div>
 
-                {/* Totals - custom labels & order */}
+                {/* Totals - flexible */}
                 <div className="flex justify-end">
-                  <div className="w-64 space-y-2">
+                  <div className="w-72 space-y-1.5">
                     {(() => {
-                      const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
-                      const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
                       const showDAVal = invoice.showDA !== false;
-                      
-                      const renderRow = (key: string) => {
-                        if (key === 'tht') return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.tht || 'T.H.T'}</span>
-                            <span>{formatCurrency(invoice.sousTotal, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'ttva') return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.ttva || 'T.TVA'}</span>
-                            <span>{formatCurrency(invoice.totalTva, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'remise' && invoice.remise && invoice.montantRemise) return (
-                          <div key={key} className="flex justify-between text-sm text-destructive">
-                            <span>{labels.remise || 'Remise'} ({invoice.remise}%)</span>
-                            <span>{formatCurrency(invoice.montantRemise, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.timbre || 'Timbre'} ({invoice.timbre}%)</span>
-                            <span>{formatCurrency(invoice.montantTimbre, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'ttc') return (
-                          <div key={key}>
-                            <div className="h-px bg-border my-2" />
-                            <div className="flex justify-between font-bold text-lg">
-                              <span>{labels.ttc || 'TTC'}</span>
-                              <span className="text-primary">{formatCurrency(invoice.total, showDAVal)}</span>
-                            </div>
-                          </div>
-                        );
-                        return null;
-                      };
+                      const effectiveRows: SummaryRow[] = invoice.summaryRows && invoice.summaryRows.length
+                        ? invoice.summaryRows
+                        : migrateLegacySummary({ remise: invoice.remise, timbre: invoice.timbre });
+                      const c = computeSummary(effectiveRows, invoice.items);
+                      const enabled = c.rows.map((r, i) => ({ r, i })).filter(x => x.r.row.enabled);
+                      const lastSnapshotIdx = [...enabled].reverse().find(x => x.r.isComputed)?.i ?? -1;
 
-                      return order.map(renderRow);
+                      return c.rows.map((cr, idx) => {
+                        if (!cr.row.enabled) return null;
+                        const isFinal = idx === lastSnapshotIdx;
+                        const isDeduction = cr.signedAmount < 0;
+                        const pctSuffix =
+                          cr.row.percent !== undefined && cr.row.percent !== null &&
+                          (cr.row.kind === 'remise' || cr.row.kind === 'tva' || cr.row.kind === 'retenue' ||
+                           (cr.row.kind === 'custom' && cr.row.customType === 'percent'))
+                            ? ` (${cr.row.percent}%)` : '';
+
+                        if (isFinal) {
+                          return (
+                            <div key={cr.row.id}>
+                              <div className="h-px bg-border my-2" />
+                              <div className="flex justify-between font-bold text-lg">
+                                <span>{cr.row.label}{pctSuffix}</span>
+                                <span className="text-primary">{formatCurrency(cr.amount, showDAVal)}</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={cr.row.id} className={`flex justify-between text-sm ${isDeduction ? 'text-destructive' : ''}`}>
+                            <span className={isDeduction ? '' : 'text-muted-foreground'}>{cr.row.label}{pctSuffix}</span>
+                            <span>{formatCurrency(cr.amount, showDAVal)}</span>
+                          </div>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
