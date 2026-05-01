@@ -135,15 +135,10 @@ export default function EditInvoice() {
     }
   };
 
-  const sousTotal = items.reduce((sum, item) => sum + item.quantite * item.prixUnitaire, 0);
-  const totalTva = items.reduce(
-    (sum, item) => sum + item.quantite * item.prixUnitaire * (item.tva / 100),
-    0
-  );
-  const montantRemise = (sousTotal + totalTva) * (remise / 100);
-  const afterRemise = sousTotal + totalTva - montantRemise;
-  const montantTimbre = afterRemise * (timbre / 100);
-  const total = afterRemise + montantTimbre;
+  const computed = computeSummary(summaryRows, items);
+  const sousTotal = computed.tht;
+  const totalTva = computed.totalTvaItems;
+  const total = computed.finalTotal;
 
   const handleSubmit = () => {
     if (!clientId) {
@@ -164,18 +159,17 @@ export default function EditInvoice() {
       items,
       sousTotal,
       totalTva,
-      remise: remise || undefined,
-      montantRemise: remise ? montantRemise : undefined,
-      timbre: timbre || undefined,
-      montantTimbre: timbre ? montantTimbre : undefined,
+      remise: undefined,
+      montantRemise: undefined,
+      timbre: undefined,
+      montantTimbre: undefined,
       total,
       notes,
       conditions,
       showEcheance,
       showDA,
       showLogo,
-      summaryLabels,
-      summaryOrder,
+      summaryRows,
     };
 
     updateInvoice(updatedInvoice);
