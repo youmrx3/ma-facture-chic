@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
-import { SummaryEditor } from '@/components/SummaryEditor';
+import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS } from '@/types/invoice';
+import { SummaryBuilder } from '@/components/SummaryBuilder';
+import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
 
 const formatCurrency = (amount: number, showDA: boolean) => {
@@ -44,10 +45,9 @@ export default function EditInvoice() {
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
-  const [remise, setRemise] = useState(0);
-  const [timbre, setTimbre] = useState(0);
-  const [summaryLabels, setSummaryLabels] = useState<Record<string, string>>({ ...DEFAULT_SUMMARY_LABELS });
-  const [summaryOrder, setSummaryOrder] = useState<string[]>([...DEFAULT_SUMMARY_ORDER]);
+  const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
+    () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
+  );
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [newUnit, setNewUnit] = useState('');
 
@@ -62,10 +62,14 @@ export default function EditInvoice() {
       setShowEcheance(existingInvoice.showEcheance !== false);
       setShowDA(existingInvoice.showDA !== false);
       setShowLogo(existingInvoice.showLogo !== false);
-      setRemise(existingInvoice.remise || 0);
-      setTimbre(existingInvoice.timbre || 0);
-      setSummaryLabels(existingInvoice.summaryLabels || { ...DEFAULT_SUMMARY_LABELS });
-      setSummaryOrder(existingInvoice.summaryOrder || [...DEFAULT_SUMMARY_ORDER]);
+      if (existingInvoice.summaryRows && existingInvoice.summaryRows.length) {
+        setSummaryRows(existingInvoice.summaryRows);
+      } else {
+        setSummaryRows(migrateLegacySummary({
+          remise: existingInvoice.remise,
+          timbre: existingInvoice.timbre,
+        }));
+      }
     }
   }, [existingInvoice]);
 
@@ -131,15 +135,10 @@ export default function EditInvoice() {
     }
   };
 
-  const sousTotal = items.reduce((sum, item) => sum + item.quantite * item.prixUnitaire, 0);
-  const totalTva = items.reduce(
-    (sum, item) => sum + item.quantite * item.prixUnitaire * (item.tva / 100),
-    0
-  );
-  const montantRemise = (sousTotal + totalTva) * (remise / 100);
-  const afterRemise = sousTotal + totalTva - montantRemise;
-  const montantTimbre = afterRemise * (timbre / 100);
-  const total = afterRemise + montantTimbre;
+  const computed = computeSummary(summaryRows, items);
+  const sousTotal = computed.tht;
+  const totalTva = computed.totalTvaItems;
+  const total = computed.finalTotal;
 
   const handleSubmit = () => {
     if (!clientId) {
@@ -160,18 +159,17 @@ export default function EditInvoice() {
       items,
       sousTotal,
       totalTva,
-      remise: remise || undefined,
-      montantRemise: remise ? montantRemise : undefined,
-      timbre: timbre || undefined,
-      montantTimbre: timbre ? montantTimbre : undefined,
+      remise: undefined,
+      montantRemise: undefined,
+      timbre: undefined,
+      montantTimbre: undefined,
       total,
       notes,
       conditions,
       showEcheance,
       showDA,
       showLogo,
-      summaryLabels,
-      summaryOrder,
+      summaryRows,
     };
 
     updateInvoice(updatedInvoice);
@@ -437,53 +435,14 @@ export default function EditInvoice() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {/* Remise */}
-                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Remise (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={remise}
-                        onChange={(e) => setRemise(parseFloat(e.target.value) || 0)}
-                        className="w-24 h-8 text-sm"
-                      />
-                    </div>
-                  </div>
+                  <Label className="text-xs text-muted-foreground">
+                    Activez, renommez, réordonnez ou ajoutez des lignes. Cliquez sur l'icône engrenage pour configurer (% / valeur / saisie manuelle).
+                  </Label>
 
-                  {/* Timbre */}
-                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Timbre (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={timbre}
-                        onChange={(e) => setTimbre(parseFloat(e.target.value) || 0)}
-                        className="w-24 h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-border" />
-                  <Label className="text-xs text-muted-foreground">Survolez pour réordonner ou renommer</Label>
-
-                  <SummaryEditor
-                    summaryLabels={summaryLabels}
-                    summaryOrder={summaryOrder}
-                    onLabelsChange={setSummaryLabels}
-                    onOrderChange={setSummaryOrder}
-                    sousTotal={sousTotal}
-                    totalTva={totalTva}
-                    remise={remise}
-                    montantRemise={montantRemise}
-                    timbre={timbre}
-                    montantTimbre={montantTimbre}
-                    total={total}
+                  <SummaryBuilder
+                    rows={summaryRows}
+                    onChange={setSummaryRows}
+                    items={items}
                     showDA={showDA}
                     formatCurrency={formatCurrency}
                   />

@@ -14,7 +14,8 @@ import {
   CreditCard,
   Pencil,
 } from 'lucide-react';
-import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
+import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow } from '@/types/invoice';
+import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -238,7 +239,7 @@ export default function InvoiceDetail() {
       margin: { top: 20, bottom: 40 },
     });
 
-    // Totals - using custom labels and order
+    // Totals - flexible row-based summary
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     const pageHeight = doc.internal.pageSize.height;
     let totalsY = finalY;
@@ -246,53 +247,51 @@ export default function InvoiceDetail() {
       doc.addPage();
       totalsY = 30;
     }
-    
+
     const rightX = 195;
     const labelX = 140;
-    const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
-    const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
-    
+
+    const effectiveRows: SummaryRow[] = invoice.summaryRows && invoice.summaryRows.length
+      ? invoice.summaryRows
+      : migrateLegacySummary({ remise: invoice.remise, timbre: invoice.timbre });
+
+    const computedPdf = computeSummary(effectiveRows, invoice.items);
+
+    // Determine the "final" row index = last enabled computed snapshot
+    const enabledIdx = computedPdf.rows
+      .map((c, i) => ({ c, i }))
+      .filter(x => x.c.row.enabled);
+    const lastSnapshotIdx = [...enabledIdx].reverse().find(x => x.c.isComputed)?.i ?? -1;
+
     let currentTotalY = totalsY;
 
-    // Render rows in custom order, TTC last with separator
-    const nonTtcItems = order.filter(k => k !== 'ttc');
-    const ttcKey = order.includes('ttc') ? 'ttc' : null;
+    computedPdf.rows.forEach((c, idx) => {
+      if (!c.row.enabled) return;
+      const isFinal = idx === lastSnapshotIdx;
 
-    for (const key of nonTtcItems) {
-      if (key === 'tht') {
+      if (isFinal) {
+        doc.setDrawColor(200);
+        doc.line(labelX, currentTotalY - 2, rightX, currentTotalY - 2);
+        currentTotalY += 4;
+        doc.setFontSize(12);
+        doc.setTextColor(30, 58, 138);
+      } else {
         doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`${labels.tht || 'T.H.T'}:`, labelX, currentTotalY);
-        doc.text(formatCurrencyForPDF(invoice.sousTotal, showDA), rightX, currentTotalY, { align: 'right' });
-        currentTotalY += 7;
-      } else if (key === 'ttva') {
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`${labels.ttva || 'T.TVA'}:`, labelX, currentTotalY);
-        doc.text(formatCurrencyForPDF(invoice.totalTva, showDA), rightX, currentTotalY, { align: 'right' });
-        currentTotalY += 7;
-      } else if (key === 'remise' && invoice.remise && invoice.montantRemise) {
-        doc.setFontSize(10);
-        doc.setTextColor(200, 50, 50);
-        doc.text(`${labels.remise || 'Remise'} (${invoice.remise}%):`, labelX, currentTotalY);
-        doc.text(formatCurrencyForPDF(invoice.montantRemise, showDA), rightX, currentTotalY, { align: 'right' });
-        currentTotalY += 7;
-      } else if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) {
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`${labels.timbre || 'Timbre'} (${invoice.timbre}%):`, labelX, currentTotalY);
-        doc.text(formatCurrencyForPDF(invoice.montantTimbre, showDA), rightX, currentTotalY, { align: 'right' });
-        currentTotalY += 7;
+        // deductions in red
+        if (c.signedAmount < 0) doc.setTextColor(200, 50, 50);
+        else doc.setTextColor(100);
       }
-    }
-    
-    doc.setDrawColor(200);
-    doc.line(labelX, currentTotalY, rightX, currentTotalY);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(30, 58, 138);
-    doc.text(`${labels.ttc || 'TTC'}:`, labelX, currentTotalY + 8);
-    doc.text(formatCurrencyForPDF(invoice.total, showDA), rightX, currentTotalY + 8, { align: 'right' });
+
+      const pctSuffix =
+        c.row.percent !== undefined && c.row.percent !== null &&
+        (c.row.kind === 'remise' || c.row.kind === 'tva' || c.row.kind === 'retenue' ||
+         (c.row.kind === 'custom' && c.row.customType === 'percent'))
+          ? ` (${c.row.percent}%)` : '';
+
+      doc.text(`${c.row.label}${pctSuffix}:`, labelX, currentTotalY);
+      doc.text(formatCurrencyForPDF(c.amount, showDA), rightX, currentTotalY, { align: 'right' });
+      currentTotalY += isFinal ? 10 : 7;
+    });
 
     // Notes & Conditions
     if (invoice.notes || invoice.conditions) {
@@ -506,52 +505,46 @@ export default function InvoiceDetail() {
                   </table>
                 </div>
 
-                {/* Totals - custom labels & order */}
+                {/* Totals - flexible */}
                 <div className="flex justify-end">
-                  <div className="w-64 space-y-2">
+                  <div className="w-72 space-y-1.5">
                     {(() => {
-                      const labels = invoice.summaryLabels || DEFAULT_SUMMARY_LABELS;
-                      const order = invoice.summaryOrder || DEFAULT_SUMMARY_ORDER;
                       const showDAVal = invoice.showDA !== false;
-                      
-                      const renderRow = (key: string) => {
-                        if (key === 'tht') return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.tht || 'T.H.T'}</span>
-                            <span>{formatCurrency(invoice.sousTotal, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'ttva') return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.ttva || 'T.TVA'}</span>
-                            <span>{formatCurrency(invoice.totalTva, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'remise' && invoice.remise && invoice.montantRemise) return (
-                          <div key={key} className="flex justify-between text-sm text-destructive">
-                            <span>{labels.remise || 'Remise'} ({invoice.remise}%)</span>
-                            <span>{formatCurrency(invoice.montantRemise, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'timbre' && invoice.timbre && invoice.montantTimbre) return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{labels.timbre || 'Timbre'} ({invoice.timbre}%)</span>
-                            <span>{formatCurrency(invoice.montantTimbre, showDAVal)}</span>
-                          </div>
-                        );
-                        if (key === 'ttc') return (
-                          <div key={key}>
-                            <div className="h-px bg-border my-2" />
-                            <div className="flex justify-between font-bold text-lg">
-                              <span>{labels.ttc || 'TTC'}</span>
-                              <span className="text-primary">{formatCurrency(invoice.total, showDAVal)}</span>
-                            </div>
-                          </div>
-                        );
-                        return null;
-                      };
+                      const effectiveRows: SummaryRow[] = invoice.summaryRows && invoice.summaryRows.length
+                        ? invoice.summaryRows
+                        : migrateLegacySummary({ remise: invoice.remise, timbre: invoice.timbre });
+                      const c = computeSummary(effectiveRows, invoice.items);
+                      const enabled = c.rows.map((r, i) => ({ r, i })).filter(x => x.r.row.enabled);
+                      const lastSnapshotIdx = [...enabled].reverse().find(x => x.r.isComputed)?.i ?? -1;
 
-                      return order.map(renderRow);
+                      return c.rows.map((cr, idx) => {
+                        if (!cr.row.enabled) return null;
+                        const isFinal = idx === lastSnapshotIdx;
+                        const isDeduction = cr.signedAmount < 0;
+                        const pctSuffix =
+                          cr.row.percent !== undefined && cr.row.percent !== null &&
+                          (cr.row.kind === 'remise' || cr.row.kind === 'tva' || cr.row.kind === 'retenue' ||
+                           (cr.row.kind === 'custom' && cr.row.customType === 'percent'))
+                            ? ` (${cr.row.percent}%)` : '';
+
+                        if (isFinal) {
+                          return (
+                            <div key={cr.row.id}>
+                              <div className="h-px bg-border my-2" />
+                              <div className="flex justify-between font-bold text-lg">
+                                <span>{cr.row.label}{pctSuffix}</span>
+                                <span className="text-primary">{formatCurrency(cr.amount, showDAVal)}</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={cr.row.id} className={`flex justify-between text-sm ${isDeduction ? 'text-destructive' : ''}`}>
+                            <span className={isDeduction ? '' : 'text-muted-foreground'}>{cr.row.label}{pctSuffix}</span>
+                            <span>{formatCurrency(cr.amount, showDAVal)}</span>
+                          </div>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
