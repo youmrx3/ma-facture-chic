@@ -14,7 +14,8 @@ import {
   CreditCard,
   Pencil,
 } from 'lucide-react';
-import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
+import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow } from '@/types/invoice';
+import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
