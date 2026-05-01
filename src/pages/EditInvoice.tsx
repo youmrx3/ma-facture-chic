@@ -435,53 +435,14 @@ export default function EditInvoice() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {/* Remise */}
-                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Remise (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={remise}
-                        onChange={(e) => setRemise(parseFloat(e.target.value) || 0)}
-                        className="w-24 h-8 text-sm"
-                      />
-                    </div>
-                  </div>
+                  <Label className="text-xs text-muted-foreground">
+                    Activez, renommez, réordonnez ou ajoutez des lignes. Cliquez sur l'icône engrenage pour configurer (% / valeur / saisie manuelle).
+                  </Label>
 
-                  {/* Timbre */}
-                  <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Timbre (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={timbre}
-                        onChange={(e) => setTimbre(parseFloat(e.target.value) || 0)}
-                        className="w-24 h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-border" />
-                  <Label className="text-xs text-muted-foreground">Survolez pour réordonner ou renommer</Label>
-
-                  <SummaryEditor
-                    summaryLabels={summaryLabels}
-                    summaryOrder={summaryOrder}
-                    onLabelsChange={setSummaryLabels}
-                    onOrderChange={setSummaryOrder}
-                    sousTotal={sousTotal}
-                    totalTva={totalTva}
-                    remise={remise}
-                    montantRemise={montantRemise}
-                    timbre={timbre}
-                    montantTimbre={montantTimbre}
-                    total={total}
+                  <SummaryBuilder
+                    rows={summaryRows}
+                    onChange={setSummaryRows}
+                    items={items}
                     showDA={showDA}
                     formatCurrency={formatCurrency}
                   />
