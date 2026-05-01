@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER } from '@/types/invoice';
-import { SummaryEditor } from '@/components/SummaryEditor';
+import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS } from '@/types/invoice';
+import { SummaryBuilder } from '@/components/SummaryBuilder';
+import { computeSummary } from '@/lib/summary';
 import { toast } from 'sonner';
 
 const formatCurrency = (amount: number, showDA: boolean) => {
@@ -41,10 +42,9 @@ export default function CreateInvoice() {
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
-  const [remise, setRemise] = useState(0);
-  const [timbre, setTimbre] = useState(0);
-  const [summaryLabels, setSummaryLabels] = useState<Record<string, string>>({ ...DEFAULT_SUMMARY_LABELS });
-  const [summaryOrder, setSummaryOrder] = useState<string[]>([...DEFAULT_SUMMARY_ORDER]);
+  const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
+    () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
+  );
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: crypto.randomUUID(),
@@ -105,15 +105,10 @@ export default function CreateInvoice() {
     }
   };
 
-  const sousTotal = items.reduce((sum, item) => sum + item.quantite * item.prixUnitaire, 0);
-  const totalTva = items.reduce(
-    (sum, item) => sum + item.quantite * item.prixUnitaire * (item.tva / 100),
-    0
-  );
-  const montantRemise = (sousTotal + totalTva) * (remise / 100);
-  const afterRemise = sousTotal + totalTva - montantRemise;
-  const montantTimbre = afterRemise * (timbre / 100);
-  const total = afterRemise + montantTimbre;
+  const computed = computeSummary(summaryRows, items);
+  const sousTotal = computed.tht;
+  const totalTva = computed.totalTvaItems;
+  const total = computed.finalTotal;
 
   const handleSubmit = () => {
     if (!clientId) {
