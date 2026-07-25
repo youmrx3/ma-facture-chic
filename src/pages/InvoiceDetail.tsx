@@ -252,29 +252,50 @@ export default function InvoiceDetail() {
       });
     }
 
-    // Table
-    const tableData = invoice.items.map((item) => [
-      item.description,
-      `${item.quantite} ${item.unite || 'Unité'}`,
-      formatCurrencyForPDF(item.prixUnitaire, showDA),
-      `${item.tva}%`,
-      formatCurrencyForPDF(item.total, showDA),
-    ]);
+    // Attachment / Situation header (above table)
+    let tableStartY = 105;
+    if (invoice.attachmentTitle || invoice.attachmentDescription) {
+      let attY = tableStartY;
+      if (invoice.attachmentTitle) {
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(30, 58, 138);
+        doc.text(invoice.attachmentTitle, 14, attY);
+        attY += 6;
+        doc.setFont(undefined, 'normal');
+      }
+      if (invoice.attachmentDescription) {
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        const wrapped = doc.splitTextToSize(invoice.attachmentDescription, 180);
+        doc.text(wrapped, 14, attY);
+        attY += wrapped.length * 5;
+      }
+      tableStartY = attY + 4;
+    }
+
+    // Table (dynamic columns)
+    const effectiveColumns = getEffectiveColumns(invoice.columns).filter(c => c.enabled);
+    const head = [effectiveColumns.map(c => c.label || DEFAULT_COLUMN_LABELS[c.key])];
+    const tableData = invoice.items.map((item, i) =>
+      effectiveColumns.map(c => columnCellValue(c.key, item, i, showDA, true))
+    );
+    const columnStyles: Record<number, any> = {};
+    effectiveColumns.forEach((c, i) => {
+      const style: any = { halign: COLUMN_ALIGN[c.key] };
+      const w = COLUMN_WIDTH_PDF[c.key];
+      if (w > 0) style.cellWidth = w;
+      columnStyles[i] = style;
+    });
 
     autoTable(doc, {
-      startY: 105,
-      head: [['Description', 'Qté', 'P.U', 'TVA', 'Total']],
+      startY: tableStartY,
+      head,
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: {
-        0: { cellWidth: 70 },
-        1: { halign: 'center', cellWidth: 20 },
-        2: { halign: 'right', cellWidth: 35 },
-        3: { halign: 'center', cellWidth: 20 },
-        4: { halign: 'right', cellWidth: 35 },
-      },
+      columnStyles,
       showHead: 'everyPage',
       margin: { top: 20, bottom: 40 },
     });
