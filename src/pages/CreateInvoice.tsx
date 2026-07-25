@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS } from '@/types/invoice';
+import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS, InvoiceColumn, DEFAULT_COLUMNS } from '@/types/invoice';
 import { SummaryBuilder } from '@/components/SummaryBuilder';
+import { ColumnsBuilder } from '@/components/ColumnsBuilder';
 import { computeSummary } from '@/lib/summary';
 import { toast } from 'sonner';
 
@@ -45,6 +46,11 @@ export default function CreateInvoice() {
   const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
     () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
   );
+  const [columns, setColumns] = useState<InvoiceColumn[]>(
+    () => JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
+  );
+  const [attachmentTitle, setAttachmentTitle] = useState('');
+  const [attachmentDescription, setAttachmentDescription] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: crypto.randomUUID(),
@@ -139,6 +145,9 @@ export default function CreateInvoice() {
       showDA,
       showLogo,
       summaryRows,
+      columns,
+      attachmentTitle: attachmentTitle.trim() || undefined,
+      attachmentDescription: attachmentDescription.trim() || undefined,
     };
 
     addInvoice(invoice);
