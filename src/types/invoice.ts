@@ -66,6 +66,33 @@ export const DEFAULT_SUMMARY_ROWS: SummaryRow[] = [
 // Legacy (kept for backward-compat with older saved invoices)
 export const DEFAULT_SUMMARY_ORDER = ['tht', 'ttva', 'remise', 'timbre', 'ttc'];
 
+// Configurable table columns
+export type ColumnKey = 'index' | 'designation' | 'unite' | 'quantite' | 'prixUnitaire' | 'total';
+
+export interface InvoiceColumn {
+  key: ColumnKey;
+  label: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_COLUMN_LABELS: Record<ColumnKey, string> = {
+  index: 'N°',
+  designation: 'Désignation',
+  unite: 'Unité',
+  quantite: 'Qté',
+  prixUnitaire: 'Prix Unitaire',
+  total: 'Total',
+};
+
+export const DEFAULT_COLUMNS: InvoiceColumn[] = [
+  { key: 'index', label: DEFAULT_COLUMN_LABELS.index, enabled: true },
+  { key: 'designation', label: DEFAULT_COLUMN_LABELS.designation, enabled: true },
+  { key: 'unite', label: DEFAULT_COLUMN_LABELS.unite, enabled: true },
+  { key: 'quantite', label: DEFAULT_COLUMN_LABELS.quantite, enabled: true },
+  { key: 'prixUnitaire', label: DEFAULT_COLUMN_LABELS.prixUnitaire, enabled: true },
+  { key: 'total', label: DEFAULT_COLUMN_LABELS.total, enabled: true },
+];
+
 export interface Invoice {
   id: string;
   numero: string;
@@ -93,6 +120,11 @@ export interface Invoice {
   summaryOrder?: string[];
   // NEW: full configurable summary
   summaryRows?: SummaryRow[];
+  // NEW: configurable table columns
+  columns?: InvoiceColumn[];
+  // NEW: attachment / situation title displayed above items table
+  attachmentTitle?: string;
+  attachmentDescription?: string;
 }
 
 export interface ClientField {
