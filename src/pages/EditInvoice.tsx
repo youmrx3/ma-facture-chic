@@ -183,6 +183,9 @@ export default function EditInvoice() {
       showDA,
       showLogo,
       summaryRows,
+      columns,
+      attachmentTitle: attachmentTitle.trim() || undefined,
+      attachmentDescription: attachmentDescription.trim() || undefined,
     };
 
     updateInvoice(updatedInvoice);
