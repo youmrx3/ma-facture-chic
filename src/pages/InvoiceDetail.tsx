@@ -14,7 +14,7 @@ import {
   CreditCard,
   Pencil,
 } from 'lucide-react';
-import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow } from '@/types/invoice';
+import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow, InvoiceColumn, DEFAULT_COLUMNS, DEFAULT_COLUMN_LABELS, ColumnKey, InvoiceItem } from '@/types/invoice';
 import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -39,6 +39,46 @@ const formatCurrency = (amount: number, showDA = true) => {
 const formatCurrencyForPDF = (amount: number, showDA = true) => {
   const formatted = amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return showDA ? formatted + ' DA' : formatted;
+};
+
+// Column helpers
+const getEffectiveColumns = (cols?: InvoiceColumn[]): InvoiceColumn[] =>
+  cols && cols.length ? cols : DEFAULT_COLUMNS;
+
+const columnCellValue = (
+  key: ColumnKey,
+  item: InvoiceItem,
+  index: number,
+  showDA: boolean,
+  forPdf: boolean,
+): string => {
+  const fmt = forPdf ? formatCurrencyForPDF : formatCurrency;
+  switch (key) {
+    case 'index': return String(index + 1);
+    case 'designation': return item.description;
+    case 'unite': return item.unite || 'Unité';
+    case 'quantite': return String(item.quantite);
+    case 'prixUnitaire': return fmt(item.prixUnitaire, showDA);
+    case 'total': return fmt(item.total, showDA);
+  }
+};
+
+const COLUMN_ALIGN: Record<ColumnKey, 'left' | 'center' | 'right'> = {
+  index: 'center',
+  designation: 'left',
+  unite: 'center',
+  quantite: 'center',
+  prixUnitaire: 'right',
+  total: 'right',
+};
+
+const COLUMN_WIDTH_PDF: Record<ColumnKey, number> = {
+  index: 12,
+  designation: 0, // flexible
+  unite: 22,
+  quantite: 18,
+  prixUnitaire: 32,
+  total: 32,
 };
 
 const formatDate = (dateString: string) => {
@@ -212,29 +252,50 @@ export default function InvoiceDetail() {
       });
     }
 
-    // Table
-    const tableData = invoice.items.map((item) => [
-      item.description,
-      `${item.quantite} ${item.unite || 'Unité'}`,
-      formatCurrencyForPDF(item.prixUnitaire, showDA),
-      `${item.tva}%`,
-      formatCurrencyForPDF(item.total, showDA),
-    ]);
+    // Attachment / Situation header (above table)
+    let tableStartY = 105;
+    if (invoice.attachmentTitle || invoice.attachmentDescription) {
+      let attY = tableStartY;
+      if (invoice.attachmentTitle) {
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(30, 58, 138);
+        doc.text(invoice.attachmentTitle, 14, attY);
+        attY += 6;
+        doc.setFont(undefined, 'normal');
+      }
+      if (invoice.attachmentDescription) {
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        const wrapped = doc.splitTextToSize(invoice.attachmentDescription, 180);
+        doc.text(wrapped, 14, attY);
+        attY += wrapped.length * 5;
+      }
+      tableStartY = attY + 4;
+    }
+
+    // Table (dynamic columns)
+    const effectiveColumns = getEffectiveColumns(invoice.columns).filter(c => c.enabled);
+    const head = [effectiveColumns.map(c => c.label || DEFAULT_COLUMN_LABELS[c.key])];
+    const tableData = invoice.items.map((item, i) =>
+      effectiveColumns.map(c => columnCellValue(c.key, item, i, showDA, true))
+    );
+    const columnStyles: Record<number, any> = {};
+    effectiveColumns.forEach((c, i) => {
+      const style: any = { halign: COLUMN_ALIGN[c.key] };
+      const w = COLUMN_WIDTH_PDF[c.key];
+      if (w > 0) style.cellWidth = w;
+      columnStyles[i] = style;
+    });
 
     autoTable(doc, {
-      startY: 105,
-      head: [['Description', 'Qté', 'P.U', 'TVA', 'Total']],
+      startY: tableStartY,
+      head,
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: {
-        0: { cellWidth: 70 },
-        1: { halign: 'center', cellWidth: 20 },
-        2: { halign: 'right', cellWidth: 35 },
-        3: { halign: 'center', cellWidth: 20 },
-        4: { halign: 'right', cellWidth: 35 },
-      },
+      columnStyles,
       showHead: 'everyPage',
       margin: { top: 20, bottom: 40 },
     });
@@ -479,31 +540,61 @@ export default function InvoiceDetail() {
                   )}
                 </div>
 
-                {/* Items Table */}
-                <div className="border rounded-lg overflow-hidden mb-6">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-3 text-sm font-semibold">Description</th>
-                        <th className="text-center p-3 text-sm font-semibold">Qté</th>
-                        <th className="text-right p-3 text-sm font-semibold">P.U</th>
-                        <th className="text-center p-3 text-sm font-semibold">TVA</th>
-                        <th className="text-right p-3 text-sm font-semibold">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.items.map((item) => (
-                        <tr key={item.id} className="border-t">
-                          <td className="p-3 text-sm">{item.description}</td>
-                          <td className="p-3 text-sm text-center">{item.quantite} {item.unite || 'Unité'}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire, invoice.showDA !== false)}</td>
-                          <td className="p-3 text-sm text-center">{item.tva}%</td>
-                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total, invoice.showDA !== false)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {/* Attachment / Situation header */}
+                {(invoice.attachmentTitle || invoice.attachmentDescription) && (
+                  <div className="mb-4">
+                    {invoice.attachmentTitle && (
+                      <h3 className="font-semibold text-primary mb-1">
+                        {invoice.attachmentTitle}
+                      </h3>
+                    )}
+                    {invoice.attachmentDescription && (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {invoice.attachmentDescription}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Items Table - dynamic columns */}
+                {(() => {
+                  const cols = getEffectiveColumns(invoice.columns).filter(c => c.enabled);
+                  const showDAVal = invoice.showDA !== false;
+                  const alignClass = (a: 'left' | 'center' | 'right') =>
+                    a === 'left' ? 'text-left' : a === 'right' ? 'text-right' : 'text-center';
+                  return (
+                    <div className="border rounded-lg overflow-hidden mb-6">
+                      <table className="w-full">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            {cols.map((c) => (
+                              <th
+                                key={c.key}
+                                className={`${alignClass(COLUMN_ALIGN[c.key])} p-3 text-sm font-semibold`}
+                              >
+                                {c.label || DEFAULT_COLUMN_LABELS[c.key]}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoice.items.map((item, i) => (
+                            <tr key={item.id} className="border-t">
+                              {cols.map((c) => (
+                                <td
+                                  key={c.key}
+                                  className={`${alignClass(COLUMN_ALIGN[c.key])} p-3 text-sm ${c.key === 'total' ? 'font-medium' : ''}`}
+                                >
+                                  {columnCellValue(c.key, item, i, showDAVal, false)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
 
                 {/* Totals - flexible */}
                 <div className="flex justify-end">

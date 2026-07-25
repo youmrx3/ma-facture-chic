@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS } from '@/types/invoice';
+import { Invoice, InvoiceItem, InvoiceType, INVOICE_TYPE_LABELS, SummaryRow, DEFAULT_SUMMARY_ROWS, InvoiceColumn, DEFAULT_COLUMNS } from '@/types/invoice';
 import { SummaryBuilder } from '@/components/SummaryBuilder';
+import { ColumnsBuilder } from '@/components/ColumnsBuilder';
 import { computeSummary } from '@/lib/summary';
 import { toast } from 'sonner';
 
@@ -45,6 +46,11 @@ export default function CreateInvoice() {
   const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
     () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
   );
+  const [columns, setColumns] = useState<InvoiceColumn[]>(
+    () => JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
+  );
+  const [attachmentTitle, setAttachmentTitle] = useState('');
+  const [attachmentDescription, setAttachmentDescription] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: crypto.randomUUID(),
@@ -139,6 +145,9 @@ export default function CreateInvoice() {
       showDA,
       showLogo,
       summaryRows,
+      columns,
+      attachmentTitle: attachmentTitle.trim() || undefined,
+      attachmentDescription: attachmentDescription.trim() || undefined,
     };
 
     addInvoice(invoice);
@@ -231,6 +240,42 @@ export default function CreateInvoice() {
                   <Label>Afficher le logo</Label>
                   <Switch checked={showLogo} onCheckedChange={setShowLogo} />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Attachment / Situation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pièce Jointe / Situation</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Titre (optionnel)</Label>
+                  <Input
+                    value={attachmentTitle}
+                    onChange={(e) => setAttachmentTitle(e.target.value)}
+                    placeholder="Ex: Situation N°3 - Travaux Mars 2026"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description (optionnel)</Label>
+                  <Textarea
+                    value={attachmentDescription}
+                    onChange={(e) => setAttachmentDescription(e.target.value)}
+                    placeholder="Description qui apparaîtra au-dessus du tableau..."
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Colonnes du tableau */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Colonnes du Tableau</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ColumnsBuilder columns={columns} onChange={setColumns} />
               </CardContent>
             </Card>
 
