@@ -243,6 +243,42 @@ export default function CreateInvoice() {
               </CardContent>
             </Card>
 
+            {/* Attachment / Situation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pièce Jointe / Situation</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Titre (optionnel)</Label>
+                  <Input
+                    value={attachmentTitle}
+                    onChange={(e) => setAttachmentTitle(e.target.value)}
+                    placeholder="Ex: Situation N°3 - Travaux Mars 2026"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description (optionnel)</Label>
+                  <Textarea
+                    value={attachmentDescription}
+                    onChange={(e) => setAttachmentDescription(e.target.value)}
+                    placeholder="Description qui apparaîtra au-dessus du tableau..."
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Colonnes du tableau */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Colonnes du Tableau</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ColumnsBuilder columns={columns} onChange={setColumns} />
+              </CardContent>
+            </Card>
+
             {/* Items */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
