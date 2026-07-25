@@ -540,31 +540,61 @@ export default function InvoiceDetail() {
                   )}
                 </div>
 
-                {/* Items Table */}
-                <div className="border rounded-lg overflow-hidden mb-6">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-3 text-sm font-semibold">Description</th>
-                        <th className="text-center p-3 text-sm font-semibold">Qté</th>
-                        <th className="text-right p-3 text-sm font-semibold">P.U</th>
-                        <th className="text-center p-3 text-sm font-semibold">TVA</th>
-                        <th className="text-right p-3 text-sm font-semibold">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.items.map((item) => (
-                        <tr key={item.id} className="border-t">
-                          <td className="p-3 text-sm">{item.description}</td>
-                          <td className="p-3 text-sm text-center">{item.quantite} {item.unite || 'Unité'}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.prixUnitaire, invoice.showDA !== false)}</td>
-                          <td className="p-3 text-sm text-center">{item.tva}%</td>
-                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.total, invoice.showDA !== false)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {/* Attachment / Situation header */}
+                {(invoice.attachmentTitle || invoice.attachmentDescription) && (
+                  <div className="mb-4">
+                    {invoice.attachmentTitle && (
+                      <h3 className="font-semibold text-primary mb-1">
+                        {invoice.attachmentTitle}
+                      </h3>
+                    )}
+                    {invoice.attachmentDescription && (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {invoice.attachmentDescription}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Items Table - dynamic columns */}
+                {(() => {
+                  const cols = getEffectiveColumns(invoice.columns).filter(c => c.enabled);
+                  const showDAVal = invoice.showDA !== false;
+                  const alignClass = (a: 'left' | 'center' | 'right') =>
+                    a === 'left' ? 'text-left' : a === 'right' ? 'text-right' : 'text-center';
+                  return (
+                    <div className="border rounded-lg overflow-hidden mb-6">
+                      <table className="w-full">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            {cols.map((c) => (
+                              <th
+                                key={c.key}
+                                className={`${alignClass(COLUMN_ALIGN[c.key])} p-3 text-sm font-semibold`}
+                              >
+                                {c.label || DEFAULT_COLUMN_LABELS[c.key]}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoice.items.map((item, i) => (
+                            <tr key={item.id} className="border-t">
+                              {cols.map((c) => (
+                                <td
+                                  key={c.key}
+                                  className={`${alignClass(COLUMN_ALIGN[c.key])} p-3 text-sm ${c.key === 'total' ? 'font-medium' : ''}`}
+                                >
+                                  {columnCellValue(c.key, item, i, showDAVal, false)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
 
                 {/* Totals - flexible */}
                 <div className="flex justify-end">
