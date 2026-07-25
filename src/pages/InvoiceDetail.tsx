@@ -14,7 +14,7 @@ import {
   CreditCard,
   Pencil,
 } from 'lucide-react';
-import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow } from '@/types/invoice';
+import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow, InvoiceColumn, DEFAULT_COLUMNS, DEFAULT_COLUMN_LABELS, ColumnKey, InvoiceItem } from '@/types/invoice';
 import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -39,6 +39,46 @@ const formatCurrency = (amount: number, showDA = true) => {
 const formatCurrencyForPDF = (amount: number, showDA = true) => {
   const formatted = amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return showDA ? formatted + ' DA' : formatted;
+};
+
+// Column helpers
+const getEffectiveColumns = (cols?: InvoiceColumn[]): InvoiceColumn[] =>
+  cols && cols.length ? cols : DEFAULT_COLUMNS;
+
+const columnCellValue = (
+  key: ColumnKey,
+  item: InvoiceItem,
+  index: number,
+  showDA: boolean,
+  forPdf: boolean,
+): string => {
+  const fmt = forPdf ? formatCurrencyForPDF : formatCurrency;
+  switch (key) {
+    case 'index': return String(index + 1);
+    case 'designation': return item.description;
+    case 'unite': return item.unite || 'Unité';
+    case 'quantite': return String(item.quantite);
+    case 'prixUnitaire': return fmt(item.prixUnitaire, showDA);
+    case 'total': return fmt(item.total, showDA);
+  }
+};
+
+const COLUMN_ALIGN: Record<ColumnKey, 'left' | 'center' | 'right'> = {
+  index: 'center',
+  designation: 'left',
+  unite: 'center',
+  quantite: 'center',
+  prixUnitaire: 'right',
+  total: 'right',
+};
+
+const COLUMN_WIDTH_PDF: Record<ColumnKey, number> = {
+  index: 12,
+  designation: 0, // flexible
+  unite: 22,
+  quantite: 18,
+  prixUnitaire: 32,
+  total: 32,
 };
 
 const formatDate = (dateString: string) => {
