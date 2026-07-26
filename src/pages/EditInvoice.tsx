@@ -46,6 +46,11 @@ export default function EditInvoice() {
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
+  const [showType, setShowType] = useState(true);
+  const [showNumero, setShowNumero] = useState(true);
+  const [showClient, setShowClient] = useState(true);
+  const [showDateCreation, setShowDateCreation] = useState(true);
+
   const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
     () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
   );
@@ -68,6 +73,11 @@ export default function EditInvoice() {
       setShowEcheance(existingInvoice.showEcheance !== false);
       setShowDA(existingInvoice.showDA !== false);
       setShowLogo(existingInvoice.showLogo !== false);
+      setShowType(existingInvoice.showType !== false);
+      setShowNumero(existingInvoice.showNumero !== false);
+      setShowClient(existingInvoice.showClient !== false);
+      setShowDateCreation(existingInvoice.showDateCreation !== false);
+
       if (existingInvoice.summaryRows && existingInvoice.summaryRows.length) {
         setSummaryRows(existingInvoice.summaryRows);
       } else {
@@ -182,6 +192,11 @@ export default function EditInvoice() {
       showEcheance,
       showDA,
       showLogo,
+      showType,
+      showNumero,
+      showClient,
+      showDateCreation,
+
       summaryRows,
       columns,
       attachmentTitle: attachmentTitle.trim() || undefined,
@@ -220,7 +235,13 @@ export default function EditInvoice() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Type de Document</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Type de Document</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Afficher</Label>
+                        <Switch checked={showType} onCheckedChange={setShowType} />
+                      </div>
+                    </div>
                     <Select value={invoiceType} onValueChange={(v) => setInvoiceType(v as InvoiceType)}>
                       <SelectTrigger>
                         <SelectValue />
@@ -235,7 +256,13 @@ export default function EditInvoice() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Client</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Client</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Afficher</Label>
+                        <Switch checked={showClient} onCheckedChange={setShowClient} />
+                      </div>
+                    </div>
                     <Select value={clientId} onValueChange={setClientId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un client" />
@@ -271,6 +298,14 @@ export default function EditInvoice() {
                   />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher le numéro du document</Label>
+                  <Switch checked={showNumero} onCheckedChange={setShowNumero} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher la date du document</Label>
+                  <Switch checked={showDateCreation} onCheckedChange={setShowDateCreation} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                   <Label>Afficher "DA" dans les prix</Label>
                   <Switch checked={showDA} onCheckedChange={setShowDA} />
                 </div>
@@ -278,6 +313,7 @@ export default function EditInvoice() {
                   <Label>Afficher le logo</Label>
                   <Switch checked={showLogo} onCheckedChange={setShowLogo} />
                 </div>
+
               </CardContent>
             </Card>
 

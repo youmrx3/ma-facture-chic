@@ -115,6 +115,12 @@ export interface Invoice {
   showEcheance?: boolean;
   showDA?: boolean;
   showLogo?: boolean;
+  // Visibility of general information blocks in the invoice/PDF
+  showType?: boolean;
+  showNumero?: boolean;
+  showClient?: boolean;
+  showDateCreation?: boolean;
+
   // Legacy summary configs
   summaryLabels?: Record<string, string>;
   summaryOrder?: string[];
