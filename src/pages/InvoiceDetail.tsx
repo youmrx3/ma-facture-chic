@@ -229,40 +229,44 @@ export default function InvoiceDetail() {
     });
 
     // Client Info
-    doc.setFontSize(11);
-    doc.setTextColor(0);
-    doc.text('FACTURÉ À:', 14, 60);
-    doc.setFontSize(10);
-    let clientY = 68;
-    if (client) {
-      if (client.nom) {
-        doc.text(client.nom, 14, clientY);
-        clientY += 6;
+    const showClientBlock = invoice.showClient !== false;
+    if (showClientBlock) {
+      doc.setFontSize(11);
+      doc.setTextColor(0);
+      doc.text('FACTURÉ À:', 14, 60);
+      doc.setFontSize(10);
+      let clientY = 68;
+      if (client) {
+        if (client.nom) {
+          doc.text(client.nom, 14, clientY);
+          clientY += 6;
+        }
+        doc.setTextColor(100);
+        if (client.adresse) {
+          doc.text(client.adresse, 14, clientY);
+          clientY += 6;
+        }
+        if (client.ville || client.codePostal) {
+          doc.text(`${client.codePostal || ''} ${client.ville || ''}`.trim(), 14, clientY);
+          clientY += 6;
+        }
+        if (client.telephone) {
+          doc.text(`Tél: ${client.telephone}`, 14, clientY);
+          clientY += 6;
+        }
+
+        // Client custom fields that are marked to show in PDF
+        const visibleClientFields = client.customFields
+          ?.filter((field) => field.showInPdf && field.value)
+          .sort((a, b) => a.order - b.order) || [];
+
+        visibleClientFields.forEach((field) => {
+          doc.text(`${field.label}: ${field.value}`, 14, clientY);
+          clientY += 6;
+        });
       }
-      doc.setTextColor(100);
-      if (client.adresse) {
-        doc.text(client.adresse, 14, clientY);
-        clientY += 6;
-      }
-      if (client.ville || client.codePostal) {
-        doc.text(`${client.codePostal || ''} ${client.ville || ''}`.trim(), 14, clientY);
-        clientY += 6;
-      }
-      if (client.telephone) {
-        doc.text(`Tél: ${client.telephone}`, 14, clientY);
-        clientY += 6;
-      }
-      
-      // Client custom fields that are marked to show in PDF
-      const visibleClientFields = client.customFields
-        ?.filter((field) => field.showInPdf && field.value)
-        .sort((a, b) => a.order - b.order) || [];
-      
-      visibleClientFields.forEach((field) => {
-        doc.text(`${field.label}: ${field.value}`, 14, clientY);
-        clientY += 6;
-      });
     }
+
 
     // Attachment / Situation header (above table)
     let tableStartY = 105;
