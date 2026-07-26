@@ -149,6 +149,11 @@ export default function CreateInvoice() {
       showEcheance,
       showDA,
       showLogo,
+      showType,
+      showNumero,
+      showClient,
+      showDateCreation,
+
       summaryRows,
       columns,
       attachmentTitle: attachmentTitle.trim() || undefined,
