@@ -43,6 +43,11 @@ export default function CreateInvoice() {
   const [showEcheance, setShowEcheance] = useState(true);
   const [showDA, setShowDA] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
+  const [showType, setShowType] = useState(true);
+  const [showNumero, setShowNumero] = useState(true);
+  const [showClient, setShowClient] = useState(true);
+  const [showDateCreation, setShowDateCreation] = useState(true);
+
   const [summaryRows, setSummaryRows] = useState<SummaryRow[]>(
     () => JSON.parse(JSON.stringify(DEFAULT_SUMMARY_ROWS)),
   );
