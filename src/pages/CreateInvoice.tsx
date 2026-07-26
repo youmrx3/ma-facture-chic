@@ -192,7 +192,13 @@ export default function CreateInvoice() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Type de Document</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Type de Document</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Afficher</Label>
+                        <Switch checked={showType} onCheckedChange={setShowType} />
+                      </div>
+                    </div>
                     <Select value={invoiceType} onValueChange={(v) => setInvoiceType(v as InvoiceType)}>
                       <SelectTrigger>
                         <SelectValue />
@@ -207,7 +213,13 @@ export default function CreateInvoice() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Client</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Client</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Afficher</Label>
+                        <Switch checked={showClient} onCheckedChange={setShowClient} />
+                      </div>
+                    </div>
                     <Select value={clientId} onValueChange={setClientId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un client" />
@@ -243,6 +255,14 @@ export default function CreateInvoice() {
                   />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher le numéro du document</Label>
+                  <Switch checked={showNumero} onCheckedChange={setShowNumero} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <Label>Afficher la date du document</Label>
+                  <Switch checked={showDateCreation} onCheckedChange={setShowDateCreation} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                   <Label>Afficher "DA" dans les prix</Label>
                   <Switch checked={showDA} onCheckedChange={setShowDA} />
                 </div>
@@ -250,6 +270,7 @@ export default function CreateInvoice() {
                   <Label>Afficher le logo</Label>
                   <Switch checked={showLogo} onCheckedChange={setShowLogo} />
                 </div>
+
               </CardContent>
             </Card>
 
