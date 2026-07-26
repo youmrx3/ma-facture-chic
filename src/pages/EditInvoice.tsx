@@ -73,6 +73,11 @@ export default function EditInvoice() {
       setShowEcheance(existingInvoice.showEcheance !== false);
       setShowDA(existingInvoice.showDA !== false);
       setShowLogo(existingInvoice.showLogo !== false);
+      setShowType(existingInvoice.showType !== false);
+      setShowNumero(existingInvoice.showNumero !== false);
+      setShowClient(existingInvoice.showClient !== false);
+      setShowDateCreation(existingInvoice.showDateCreation !== false);
+
       if (existingInvoice.summaryRows && existingInvoice.summaryRows.length) {
         setSummaryRows(existingInvoice.summaryRows);
       } else {
