@@ -157,17 +157,29 @@ export default function InvoiceDetail() {
     }
 
     // Header
-    doc.setFontSize(20);
-    doc.setTextColor(30, 58, 138);
-    doc.text(INVOICE_TYPE_LABELS[invoice.type].toUpperCase(), 14, headerStartY);
-    
+    let headerY = headerStartY;
+    if (invoice.showType !== false) {
+      doc.setFontSize(20);
+      doc.setTextColor(30, 58, 138);
+      doc.text(INVOICE_TYPE_LABELS[invoice.type].toUpperCase(), 14, headerY);
+      headerY += 7;
+    }
+
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`N° ${invoice.numero}`, 14, headerStartY + 7);
-    doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, headerStartY + 13);
-    if (invoice.showEcheance !== false) {
-      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, headerStartY + 19);
+    if (invoice.showNumero !== false) {
+      doc.text(`N° ${invoice.numero}`, 14, headerY);
+      headerY += 6;
     }
+    if (invoice.showDateCreation !== false) {
+      doc.text(`Date: ${formatDate(invoice.dateCreation)}`, 14, headerY);
+      headerY += 6;
+    }
+    if (invoice.showEcheance !== false) {
+      doc.text(`Échéance: ${formatDate(invoice.dateEcheance)}`, 14, headerY);
+      headerY += 6;
+    }
+
 
     // Company Info - Owner name first, then company name
     let companyY = headerStartY;
