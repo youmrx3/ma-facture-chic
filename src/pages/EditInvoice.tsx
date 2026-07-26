@@ -192,6 +192,11 @@ export default function EditInvoice() {
       showEcheance,
       showDA,
       showLogo,
+      showType,
+      showNumero,
+      showClient,
+      showDateCreation,
+
       summaryRows,
       columns,
       attachmentTitle: attachmentTitle.trim() || undefined,
