@@ -480,18 +480,22 @@ export default function InvoiceDetail() {
                 {/* Invoice Header */}
                 <div className="flex justify-between items-start mb-8">
                   <div>
-                    <h2 className="text-2xl font-bold text-primary mb-2">
-                      {INVOICE_TYPE_LABELS[invoice.type]}
-                    </h2>
-                    <p className="text-muted-foreground">N° {invoice.numero}</p>
+                    {invoice.showType !== false && (
+                      <h2 className="text-2xl font-bold text-primary mb-2">
+                        {INVOICE_TYPE_LABELS[invoice.type]}
+                      </h2>
+                    )}
+                    {invoice.showNumero !== false && (
+                      <p className="text-muted-foreground">N° {invoice.numero}</p>
+                    )}
                   </div>
-                  {companySettings.logo ? (
+                  {invoice.showLogo !== false && (companySettings.logo ? (
                     <img src={companySettings.logo} alt="Logo" className="h-16 object-contain" />
                   ) : (
                     <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Building2 className="h-8 w-8 text-primary" />
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 {/* Addresses */}
@@ -514,47 +518,54 @@ export default function InvoiceDetail() {
                       </p>
                     ))}
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">FACTURÉ À</h3>
-                    {client ? (
-                      <>
-                        {client.nom && <p className="font-semibold">{client.nom}</p>}
-                        {client.adresse && <p className="text-sm text-muted-foreground">{client.adresse}</p>}
-                        {(client.ville || client.codePostal) && (
-                          <p className="text-sm text-muted-foreground">
-                            {client.codePostal} {client.ville}
-                          </p>
-                        )}
-                        {client.customFields
-                          ?.filter((field) => field.showInPdf && field.value)
-                          .sort((a, b) => a.order - b.order)
-                          .map((field) => (
-                            <p key={field.id} className="text-sm text-muted-foreground">
-                              {field.label}: {field.value}
+                  {invoice.showClient !== false && (
+                    <div>
+                      <h3 className="font-semibold text-sm text-muted-foreground mb-2">FACTURÉ À</h3>
+                      {client ? (
+                        <>
+                          {client.nom && <p className="font-semibold">{client.nom}</p>}
+                          {client.adresse && <p className="text-sm text-muted-foreground">{client.adresse}</p>}
+                          {(client.ville || client.codePostal) && (
+                            <p className="text-sm text-muted-foreground">
+                              {client.codePostal} {client.ville}
                             </p>
-                          ))}
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground">Client inconnu</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Dates */}
-                <div className="flex gap-8 mb-8">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium">{formatDate(invoice.dateCreation)}</span>
-                  </div>
-                  {invoice.showEcheance !== false && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Échéance:</span>
-                      <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
+                          )}
+                          {client.customFields
+                            ?.filter((field) => field.showInPdf && field.value)
+                            .sort((a, b) => a.order - b.order)
+                            .map((field) => (
+                              <p key={field.id} className="text-sm text-muted-foreground">
+                                {field.label}: {field.value}
+                              </p>
+                            ))}
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground">Client inconnu</p>
+                      )}
                     </div>
                   )}
                 </div>
+
+                {/* Dates */}
+                {(invoice.showDateCreation !== false || invoice.showEcheance !== false) && (
+                  <div className="flex gap-8 mb-8">
+                    {invoice.showDateCreation !== false && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Date:</span>
+                        <span className="font-medium">{formatDate(invoice.dateCreation)}</span>
+                      </div>
+                    )}
+                    {invoice.showEcheance !== false && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Échéance:</span>
+                        <span className="font-medium">{formatDate(invoice.dateEcheance)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
 
                 {/* Attachment / Situation header */}
                 {(invoice.attachmentTitle || invoice.attachmentDescription) && (
