@@ -169,8 +169,13 @@ export default function EditInvoice() {
       return;
     }
 
-    if (items.some((item) => !item.description || item.prixUnitaire <= 0)) {
-      toast.error('Veuillez remplir tous les articles');
+    // On ignore les lignes vides et on accepte les prix à 0
+    const cleanedItems = items.filter(
+      (item) => item.description.trim() !== '' || item.prixUnitaire > 0 || item.quantite > 1,
+    );
+
+    if (cleanedItems.length === 0) {
+      toast.error('Ajoutez au moins un article avec une désignation');
       return;
     }
 
@@ -179,7 +184,7 @@ export default function EditInvoice() {
       type: invoiceType,
       clientId,
       dateEcheance: dateEcheance || existingInvoice.dateEcheance,
-      items,
+      items: cleanedItems,
       sousTotal,
       totalTva,
       remise: undefined,
