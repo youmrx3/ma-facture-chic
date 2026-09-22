@@ -127,8 +127,13 @@ export default function CreateInvoice() {
       return;
     }
 
-    if (items.some((item) => !item.description || item.prixUnitaire <= 0)) {
-      toast.error('Veuillez remplir tous les articles');
+    // On ignore les lignes vides et on accepte les prix à 0
+    const cleanedItems = items.filter(
+      (item) => item.description.trim() !== '' || item.prixUnitaire > 0 || item.quantite > 1,
+    );
+
+    if (cleanedItems.length === 0) {
+      toast.error('Ajoutez au moins un article avec une désignation');
       return;
     }
 
@@ -140,7 +145,7 @@ export default function CreateInvoice() {
       clientId,
       dateCreation: new Date().toISOString(),
       dateEcheance: dateEcheance || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      items,
+      items: cleanedItems,
       sousTotal,
       totalTva,
       total,
