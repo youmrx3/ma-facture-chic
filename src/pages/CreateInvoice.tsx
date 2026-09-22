@@ -145,7 +145,7 @@ export default function CreateInvoice() {
       clientId,
       dateCreation: new Date().toISOString(),
       dateEcheance: dateEcheance || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      items,
+      items: cleanedItems,
       sousTotal,
       totalTva,
       total,
