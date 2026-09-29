@@ -438,9 +438,9 @@ export default function CreateInvoice() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Total</Label>
+                          <Label>Total HT</Label>
                           <div className="h-10 flex items-center px-3 rounded-md border bg-muted font-medium">
-                            {formatCurrency(item.total, showDA)}
+                            {formatCurrency(item.quantite * item.prixUnitaire, showDA)}
                           </div>
                         </div>
                       </div>
