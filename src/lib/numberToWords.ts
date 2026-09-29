@@ -55,7 +55,8 @@ export function amountToFrenchWords(amount: number): string {
   const abs = Math.abs(amount);
   const dinars = Math.floor(abs + 1e-9);
   const centimes = Math.round((abs - dinars) * 100);
-  let s = `${intToWords(dinars)} dinar${dinars > 1 ? 's' : ''} algérien${dinars > 1 ? 's' : ''}`;
+  const w = intToWords(dinars);
+  let s = `${w}${/(million|milliard)s?$/.test(w) ? ' de' : ''} dinar${dinars > 1 ? 's' : ''} algérien${dinars > 1 ? 's' : ''}`;
   if (centimes > 0) s += ` et ${intToWords(centimes)} centime${centimes > 1 ? 's' : ''}`;
   s = s.charAt(0).toUpperCase() + s.slice(1);
   return amount < 0 ? `Moins ${s.toLowerCase()}` : s;
