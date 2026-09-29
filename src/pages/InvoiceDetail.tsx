@@ -17,6 +17,9 @@ import {
 import { INVOICE_TYPE_LABELS, INVOICE_STATUS_LABELS, InvoiceStatus, DEFAULT_SUMMARY_LABELS, DEFAULT_SUMMARY_ORDER, SummaryRow, InvoiceColumn, DEFAULT_COLUMNS, DEFAULT_COLUMN_LABELS, ColumnKey, InvoiceItem } from '@/types/invoice';
 import { computeSummary, migrateLegacySummary } from '@/lib/summary';
 import { toast } from 'sonner';
+import { amountToFrenchWords } from '@/lib/numberToWords';
+import { amountWordsPrefix, exportInvoiceWord, exportInvoiceExcel } from '@/lib/exportInvoice';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -59,7 +62,7 @@ const columnCellValue = (
     case 'unite': return item.unite || 'Unité';
     case 'quantite': return String(item.quantite);
     case 'prixUnitaire': return fmt(item.prixUnitaire, showDA);
-    case 'total': return fmt(item.total, showDA);
+    case 'total': return fmt(item.quantite * item.prixUnitaire, showDA);
   }
 };
 
@@ -160,13 +163,13 @@ export default function InvoiceDetail() {
     let headerY = headerStartY;
     if (invoice.showType !== false) {
       doc.setFontSize(20);
-      doc.setTextColor(30, 58, 138);
+      doc.setTextColor(0);
       doc.text(INVOICE_TYPE_LABELS[invoice.type].toUpperCase(), 14, headerY);
       headerY += 7;
     }
 
     doc.setFontSize(10);
-    doc.setTextColor(100);
+    doc.setTextColor(0);
     if (invoice.showNumero !== false) {
       doc.text(`N° ${invoice.numero}`, 14, headerY);
       headerY += 6;
@@ -200,7 +203,7 @@ export default function InvoiceDetail() {
     }
     
     doc.setFontSize(9);
-    doc.setTextColor(100);
+    doc.setTextColor(0);
     if (companySettings.adresse) {
       doc.text(companySettings.adresse, 140, companyY);
       companyY += 5;
@@ -241,7 +244,7 @@ export default function InvoiceDetail() {
           doc.text(client.nom, 14, clientY);
           clientY += 6;
         }
-        doc.setTextColor(100);
+        doc.setTextColor(0);
         if (client.adresse) {
           doc.text(client.adresse, 14, clientY);
           clientY += 6;
@@ -275,14 +278,14 @@ export default function InvoiceDetail() {
       if (invoice.attachmentTitle) {
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(30, 58, 138);
+        doc.setTextColor(0);
         doc.text(invoice.attachmentTitle, 14, attY);
         attY += 6;
         doc.setFont(undefined, 'normal');
       }
       if (invoice.attachmentDescription) {
         doc.setFontSize(9);
-        doc.setTextColor(80);
+        doc.setTextColor(0);
         const wrapped = doc.splitTextToSize(invoice.attachmentDescription, 180);
         doc.text(wrapped, 14, attY);
         attY += wrapped.length * 5;
@@ -308,9 +311,9 @@ export default function InvoiceDetail() {
       startY: tableStartY,
       head,
       body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 4 },
+      theme: 'grid',
+      headStyles: { fillColor: [229, 229, 229], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.2 },
+      styles: { fontSize: 9, cellPadding: 4, textColor: 0, lineColor: 0, lineWidth: 0.2 },
       columnStyles,
       showHead: 'everyPage',
       margin: { top: 20, bottom: 40 },
@@ -351,12 +354,11 @@ export default function InvoiceDetail() {
         doc.line(labelX, currentTotalY - 2, rightX, currentTotalY - 2);
         currentTotalY += 4;
         doc.setFontSize(12);
-        doc.setTextColor(30, 58, 138);
+        doc.setTextColor(0);
       } else {
         doc.setFontSize(10);
         // deductions in red
-        if (c.signedAmount < 0) doc.setTextColor(200, 50, 50);
-        else doc.setTextColor(100);
+        doc.setTextColor(0);
       }
 
       const pctSuffix =
@@ -370,10 +372,24 @@ export default function InvoiceDetail() {
       currentTotalY += isFinal ? 10 : 7;
     });
 
+    // Amount in words
+    {
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      let wY = currentTotalY + 6;
+      const words = doc.splitTextToSize(amountToFrenchWords(computedPdf.finalTotal), 182);
+      if (wY + 8 + words.length * 5 > pageHeight - 20) { doc.addPage(); wY = 30; }
+      doc.setFont(undefined, 'bold');
+      doc.text(amountWordsPrefix(invoice), 14, wY);
+      doc.setFont(undefined, 'normal');
+      doc.text(words, 14, wY + 6);
+      currentTotalY = wY + 6 + words.length * 5;
+    }
+
     // Notes & Conditions
     if (invoice.notes || invoice.conditions) {
       doc.setFontSize(9);
-      doc.setTextColor(100);
+      doc.setTextColor(0);
       let noteY = currentTotalY + 20;
       
       if (noteY > pageHeight - 30) {
@@ -393,7 +409,7 @@ export default function InvoiceDetail() {
     // Bank Info
     if (companySettings.banque || companySettings.rib) {
       doc.setFontSize(9);
-      doc.setTextColor(100);
+      doc.setTextColor(0);
       let bankY = currentTotalY + 35;
       
       if (bankY > pageHeight - 20) {
@@ -407,6 +423,26 @@ export default function InvoiceDetail() {
 
     doc.save(`${invoice.numero}.pdf`);
     toast.success('PDF exporté avec succès');
+  };
+
+  const handleExportWord = async () => {
+    try {
+      await exportInvoiceWord(invoice, client, companySettings);
+      toast.success('Word exporté avec succès');
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de l'export Word");
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      exportInvoiceExcel(invoice, client, companySettings);
+      toast.success('Excel exporté avec succès');
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de l'export Excel");
+    }
   };
 
   const handleSendEmail = () => {
@@ -465,6 +501,14 @@ export default function InvoiceDetail() {
               <Send className="h-4 w-4 mr-2" />
               Envoyer
             </Button>
+            <Button variant="outline" onClick={handleExportWord}>
+              <FileText className="h-4 w-4 mr-2" />
+              Word
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
             <Button onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />
               Exporter PDF
@@ -481,7 +525,7 @@ export default function InvoiceDetail() {
                 <div className="flex justify-between items-start mb-8">
                   <div>
                     {invoice.showType !== false && (
-                      <h2 className="text-2xl font-bold text-primary mb-2">
+                      <h2 className="text-2xl font-bold text-foreground mb-2">
                         {INVOICE_TYPE_LABELS[invoice.type]}
                       </h2>
                     )}
@@ -571,7 +615,7 @@ export default function InvoiceDetail() {
                 {(invoice.attachmentTitle || invoice.attachmentDescription) && (
                   <div className="mb-4">
                     {invoice.attachmentTitle && (
-                      <h3 className="font-semibold text-primary mb-1">
+                      <h3 className="font-semibold text-foreground mb-1">
                         {invoice.attachmentTitle}
                       </h3>
                     )}
@@ -651,14 +695,14 @@ export default function InvoiceDetail() {
                               <div className="h-px bg-border my-2" />
                               <div className="flex justify-between font-bold text-lg">
                                 <span>{cr.row.label}{pctSuffix}</span>
-                                <span className="text-primary">{formatCurrency(cr.amount, showDAVal)}</span>
+                                <span>{formatCurrency(cr.amount, showDAVal)}</span>
                               </div>
                             </div>
                           );
                         }
                         return (
-                          <div key={cr.row.id} className={`flex justify-between text-sm ${isDeduction ? 'text-destructive' : ''}`}>
-                            <span className={isDeduction ? '' : 'text-muted-foreground'}>{cr.row.label}{pctSuffix}</span>
+                          <div key={cr.row.id} className="flex justify-between text-sm text-foreground">
+                            <span>{cr.row.label}{pctSuffix}</span>
                             <span>{formatCurrency(cr.amount, showDAVal)}</span>
                           </div>
                         );
@@ -666,6 +710,20 @@ export default function InvoiceDetail() {
                     })()}
                   </div>
                 </div>
+
+                {/* Amount in words */}
+                {(() => {
+                  const effectiveRows: SummaryRow[] = invoice.summaryRows && invoice.summaryRows.length
+                    ? invoice.summaryRows
+                    : migrateLegacySummary({ remise: invoice.remise, timbre: invoice.timbre });
+                  const c = computeSummary(effectiveRows, invoice.items);
+                  return (
+                    <div className="mt-6 text-sm text-foreground">
+                      <p className="font-semibold">{amountWordsPrefix(invoice)}</p>
+                      <p className="mt-1">{amountToFrenchWords(c.finalTotal)}</p>
+                    </div>
+                  );
+                })()}
 
                 {/* Notes */}
                 {(invoice.notes || invoice.conditions) && (
@@ -696,6 +754,14 @@ export default function InvoiceDetail() {
                 <Button className="w-full" onClick={handleExportPDF}>
                   <Download className="h-4 w-4 mr-2" />
                   Télécharger PDF
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleExportWord}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Télécharger Word
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleExportExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Télécharger Excel
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleSendEmail}>
                   <Send className="h-4 w-4 mr-2" />

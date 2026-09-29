@@ -77,11 +77,11 @@ export interface InvoiceColumn {
 
 export const DEFAULT_COLUMN_LABELS: Record<ColumnKey, string> = {
   index: 'N°',
-  designation: 'Désignation',
+  designation: 'Produit',
   unite: 'Unité',
   quantite: 'Qté',
-  prixUnitaire: 'Prix Unitaire',
-  total: 'Total',
+  prixUnitaire: 'P.U HT',
+  total: 'Total HT',
 };
 
 export const DEFAULT_COLUMNS: InvoiceColumn[] = [
